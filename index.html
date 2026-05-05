@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulatore Avanzato Didattica</title>
+    <title>Simulatore Esame Didattica - Versione Finale</title>
     <style>
         :root {
             --bg: #131314; --card: #1e1f20; --txt: #e3e3e3; 
@@ -18,16 +18,15 @@
         .badge { padding: 5px 15px; border-radius: 15px; font-weight: bold; border: 1px solid transparent; }
         .b-wrong { background: rgba(234,67,53,0.1); color: var(--wrong); border-color: rgba(234,67,53,0.3); }
         .b-right { background: rgba(52,168,83,0.1); color: var(--correct); border-color: rgba(52,168,83,0.3); }
-        .q-box { margin-top: 10px; }
-        .q-text { font-size: 1.2rem; font-weight: 500; line-height: 1.4; margin-bottom: 25px; }
+        .q-text { font-size: 1.15rem; font-weight: 500; line-height: 1.4; margin-bottom: 25px; }
         .opt-list { display: flex; flex-direction: column; gap: 12px; }
-        .opt { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: 0.2s; display: flex; gap: 12px; font-size: 1rem; }
+        .opt { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: 0.2s; display: flex; gap: 12px; }
         .opt:hover { background: #2d2f31; }
         .opt.active { border-color: var(--accent); background: rgba(168,199,250,0.05); }
         .letter { color: #9aa0a6; font-weight: bold; min-width: 25px; }
         .footer { margin-top: 30px; display: flex; justify-content: flex-end; }
-        .btn { background: var(--accent); color: #041e49; border: none; padding: 12px 35px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        .btn:disabled { background: #3c4043; color: #80868b; cursor: not-allowed; }
+        .btn { background: var(--accent); color: #041e49; border: none; padding: 12px 35px; border-radius: 25px; font-weight: bold; cursor: pointer; }
+        .btn:disabled { background: #3c4043; color: #80868b; }
         .hidden { display: none !important; }
         .res-card { text-align: center; background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid var(--border); }
         .rev-item { padding: 20px 0; border-bottom: 1px solid #333; }
@@ -48,7 +47,7 @@
             </div>
         </div>
         <div class="q-box">
-            <div class="q-text" id="q-txt">Caricamento banca dati...</div>
+            <div class="q-text" id="q-txt">Inizializzazione...</div>
             <div class="opt-list" id="opt-list"></div>
         </div>
         <div class="footer"><button id="next-btn" class="btn" disabled>Avanti</button></div>
@@ -56,148 +55,199 @@
 
     <div id="res-ui" class="hidden">
         <div class="res-card">
-            <h2>Simulazione Terminata</h2>
+            <h2>Analisi Performance</h2>
             <div style="font-size: 3.5rem; font-weight: 800; color: var(--accent); margin: 15px 0;" id="f-score">0/30</div>
             <p id="f-msg"></p>
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:25px;">
-                <button class="btn" onclick="location.reload()">Riprova (Domande diverse)</button>
-                <button id="rev-btn" style="background:none; color:var(--accent); border:1px solid var(--accent); padding:10px; border-radius:20px; cursor:pointer;">Analizza i tuoi errori</button>
+                <button class="btn" onclick="location.reload()">Inizia Nuova Sessione</button>
+                <button id="rev-btn" style="background:none; color:var(--accent); border:1px solid var(--accent); padding:10px; border-radius:20px; cursor:pointer;">Esamina Risposte</button>
             </div>
         </div>
-        <div id="rev-ui" class="hidden" style="margin-top:40px;"><h3>Revisione Dettagliata</h3></div>
+        <div id="rev-ui" class="hidden" style="margin-top:40px;"><h3>Dettaglio Risposte</h3></div>
     </div>
 </div>
 
 <script>
-/** 
- * BANCA DATI ARTICOLATA[span_7](start_span)[span_7](end_span)[span_8](start_span)[span_8](end_span)[span_9](start_span)[span_9](end_span)
- * Le risposte sono state bilanciate per evitare che la lunghezza indichi la correttezza.
- */
-const pool = [
+// Database potenziato: Distrattori bilanciati e linguaggi accademici simili
+const masterPool = [
     {
-        q: "In una prospettiva costruttivista, come viene inteso l'ambiente di apprendimento?",
+        q: "Qual è la definizione corretta di costruttivismo in ambito didattico?",
         a: [
-            "Uno spazio d'azione predisposto intenzionalmente dal docente per favorire l'attività del soggetto.",
-            "Un contesto neutro finalizzato alla trasmissione verticale e sistematica dei saperi disciplinari.",
-            "Un'area di gioco libera da vincoli progettuali dove l'alunno agisce in totale assenza di guida.",
-            "Una struttura burocratica gestita dal dirigente scolastico per monitorare i risultati formativi."
+            "Una teoria della conoscenza secondo la quale il sapere è il prodotto delle azioni di un soggetto attivo in funzione adattativa con la realtà.",
+            "Un paradigma psicologico che intende la conoscenza come il risultato di una pura ripetizione mnemonica di contenuti predefiniti.",
+            "Un approccio pedagogico che considera l'ambiente di apprendimento come uno spazio d'azione non strutturato gestito dall'alunno.",
+            "Una metodologia d'insegnamento centrata sulla trasmissione verticale del sapere dal docente a un alunno considerato passivo."
         ],
         c: 0
     },
     {
-        q: "Rifacendoci alle teorie di D. Schön, cosa si intende per 'riflessione nel corso dell'azione'?",
+        q: "Secondo le teorie di D. Schön, un professionista che adotta una 'razionalità tecnica' è:",
         a: [
-            "Pensare a ritroso dopo un tempo adeguato per sedimentare i guadagni ottenuti dall'azione svolta.",
-            "Analizzare i dati raccolti attraverso l'osservazione esterna al termine di un'attività didattica.",
-            "Riflettere nel mezzo dell'azione senza interromperla, per gestire l'incertezza e l'imprevisto.",
-            "Pianificare in modo rigido e tecnico ogni singola fase dell'intervento educativo prima di agire."
+            "Un operatore capace di sviluppare nuove ipotesi interpretative in situazioni di pratica uniche, incerte e spesso conflittuali.",
+            "Un soggetto che riflette nel mezzo dell'azione senza interromperla, integrando costantemente teoria e prassi professionale.",
+            "Solamente un esecutore di procedure standard frutto dell'applicazione rigorosa di teorie e tecniche collaudate in precedenza.",
+            "Un educatore che dedica tempo adeguato a pensare a ritroso dopo l'azione per sedimentare i guadagni formativi ottenuti."
         ],
         c: 2
     },
     {
-        q: "Secondo l'approccio sinottico razionale alla progettazione, come avviene la definizione del problema?",
+        q: "Nella progettazione educativa, l'approccio concertativo/partecipativo si basa principalmente sulla tappa di:",
         a: [
-            "Attraverso un processo di attivazione e co-progettazione che coinvolge tutti gli attori sociali.",
-            "Viene fatta a priori dal progettista a seguito di un'analisi di tipo tecnico e oggettivo.",
-            "Nasce in modo spontaneo durante l'azione didattica senza una reale pianificazione preventiva.",
-            "Deriva esclusivamente dalle richieste formali avanzate dalle famiglie e dalle istituzioni locali."
+            "Ideazione, intesa come la definizione tecnica e unilaterale del problema da parte del progettista esperto.",
+            "Attivazione, finalizzata alla ricerca di risorse e alla costruzione di un sistema di relazioni tra gli attori coinvolti.",
+            "Valutazione, orientata esclusivamente alla misurazione quantitativa degli esiti finali rispetto agli obiettivi prefissati.",
+            "Condivisione, intesa come l'accettazione passiva da parte dei beneficiari di un progetto già strutturato integralmente."
         ],
         c: 1
     },
     {
-        q: "Cosa si intende per 'scaffolding' nello sviluppo dei processi di apprendimento?",
+        q: "Cosa si intende per 'scaffolding' nella prospettiva della zona di sviluppo prossimale?",
         a: [
-            "L'impalcatura di sostegno fornita dall'adulto per permettere all'alunno di operare nella sua zona di sviluppo prossimale.",
-            "Il processo di valutazione sommativa finale volto a certificare il raggiungimento degli obiettivi minimi previsti.",
-            "La tecnica di memorizzazione visiva utilizzata per consolidare i concetti espressi nelle mappe concettuali.",
-            "L'organizzazione gerarchica dei contenuti disciplinari all'interno di un curricolo sinottico e razionale."
+            "L'impalcatura di sostegno fornita dall'adulto per permettere all'alunno di operare in uno spazio tra capacità attuale e potenziale.",
+            "Il processo di valutazione sommativa volto a certificare il raggiungimento di competenze già consolidate in modo autonomo.",
+            "La tecnica di insegnamento frontale che mira a trasmettere concetti astratti attraverso la ripetizione costante di esempi pratici.",
+            "L'organizzazione logica e gerarchica delle conoscenze all'interno di un curricolo sinottico privo di flessibilità operativa."
         ],
         c: 0
     },
     {
-        q: "Stando agli studi di W. Benjamin, l'esperienza intesa come 'Erfahrung' si riferisce a:",
+        q: "La 'competenza riflessiva', secondo lo scenario del lifelong learning contemporaneo, è considerata:",
         a: [
-            "Un tipo di esperienza che si consuma istantaneamente sugli stimoli e sulle emozioni del solo presente.",
-            "L'idea di esperienza vissuta e cumulata nel tempo, integrata nella storia e nella cultura del soggetto.",
-            "Una conoscenza puramente teorica ottenuta esclusivamente tramite lo studio dei testi scolastici.",
-            "La capacità di rispondere in modo riflesso a stimoli ambientali senza alcuna elaborazione cognitiva."
+            "Un atto cognitivo isolato finalizzato esclusivamente alla risoluzione di problemi tecnici di natura scolastica.",
+            "Una competenza trasversale che taglia le Life Skills riconosciute dall'OMS e supporta la rettificazione delle idee.",
+            "L'abilità di memorizzare e riprodurre fedelmente schemi comportamentali appresi durante la formazione primaria.",
+            "Una dote innata del docente che non può essere potenziata attraverso la formazione continua o la ricerca empirica."
         ],
         c: 1
     },
     {
-        q: "Qual è il presupposto fondamentale del modello biopsicosociale dell'ICF?",
+        q: "L'inclusione scolastica, nella prospettiva della migliore qualità della vita, si realizza attraverso:",
         a: [
-            "La disabilità è vista come una patologia medica che risiede esclusivamente nel corpo dell'individuo.",
-            "La disabilità è il risultato dell'interazione tra condizioni di salute e fattori ambientali e personali.",
-            "Il successo scolastico dipende unicamente dal quoziente intellettivo misurato tramite test standardizzati.",
-            "L'inclusione si realizza solo separando gli alunni con bisogni speciali in classi dedicate e protette."
+            "Strategie finalizzate allo sviluppo delle potenzialità nel rispetto dell'autodeterminazione e dell'accomodamento ragionevole.",
+            "L'inserimento fisico dell'alunno con disabilità in classi comuni senza la necessità di modificare i materiali didattici standard.",
+            "Una programmazione differenziata che esclude il confronto tra l'alunno con bisogni speciali e il resto del gruppo classe.",
+            "La delega esclusiva dei processi di apprendimento all'insegnante di sostegno per garantire una gestione separata dei BES."
         ],
-        c: 1
+        c: 0
     },
     {
-        q: "Nel Cooperative Learning, l'interdipendenza positiva implica che:",
+        q: "Cosa differenzia l'esperienza come 'Erlebnis' dall'esperienza come 'Erfahrung'?",
         a: [
-            "Ogni membro del gruppo lavori in modo isolato per poi sommare i risultati individuali alla fine.",
-            "Gli studenti competano tra loro per ottenere il premio migliore messo a disposizione dal docente.",
-            "Il successo di ogni singolo studente sia strettamente legato al successo di tutti i membri del gruppo.",
-            "Il leader del gruppo svolga tutto il lavoro lasciando agli altri solo compiti di pura esecuzione."
+            "L'Erlebnis è l'esperienza vissuta e cumulata negli anni, mentre l'Erfahrung è l'emozione legata al solo stimolo del presente.",
+            "L'Erfahrung indica un tipo di conoscenza teorica, mentre l'Erlebnis riguarda esclusivamente la sperimentazione attiva sul campo.",
+            "L'Erfahrung è l'esperienza vissuta cumulata nel tempo, l'Erlebnis è un tipo di esperienza che si consuma sugli stimoli del presente.",
+            "Non vi è alcuna differenza, poiché entrambi i termini tedeschi indicano il coinvolgimento diretto in un evento o fenomeno."
         ],
         c: 2
     },
     {
-        q: "Cosa differenzia le mappe mentali dalle mappe concettuali?",
+        q: "Nella didattica laboratoriale, l'insegnante assume principalmente il ruolo di:",
         a: [
-            "Le mappe mentali sono gerarchiche e rigide, mentre le concettuali sono libere e basate su disegni.",
-            "Le mappe mentali hanno una struttura a raggiera con un'idea centrale, le concettuali sono gerarchiche.",
-            "Le mappe concettuali non utilizzano parole-legame, a differenza delle mappe mentali di tipo creativo.",
-            "Non esiste alcuna differenza, i due termini indicano lo stesso strumento di supporto metacognitivo."
+            "Unico trasmettitore di saperi accademici attraverso una lezione frontale centrata sull'esposizione di concetti e teorie.",
+            "Progettista dell'apprendimento che facilita la competenza attraverso la pratica, la riflessione e l'interiorizzazione.",
+            "Osservatore passivo che non interviene mai durante le attività per non interferire con la spontaneità degli allievi.",
+            "Valutatore sommativo che interviene solo al termine del processo per sanzionare gli errori commessi dagli studenti."
         ],
         c: 1
     },
     {
-        q: "Secondo Gardner, l'intelligenza non dovrebbe essere vista come:",
+        q: "L'Universal Design for Learning (UDL) propone di progettare i curricula offrendo:",
         a: [
-            "Una singola entità statica misurabile esclusivamente attraverso il quoziente intellettivo (QI).",
-            "Un insieme pluralistico di facoltà mentali che si manifestano in ambiti e contesti differenti.",
-            "Una risorsa dinamica potenziabile attraverso l'interazione sociale e la mediazione culturale.",
-            "La capacità di risolvere problemi complessi adattando le proprie strategie alla realtà circostante."
+            "Un unico mezzo di rappresentazione e azione per garantire l'uguaglianza formale tra tutti gli studenti della classe.",
+            "Molteplici mezzi di rappresentazione, azione, espressione e coinvolgimento per rispondere alle diverse esigenze degli studenti.",
+            "Prove di verifica semplificate solo per gli alunni con disabilità certificata, mantenendo standard elevati per gli altri.",
+            "Contenuti digitali identici per tutti i discenti, indipendentemente dalle loro caratteristiche sensoriali o cognitive."
         ],
-        c: 0
+        c: 1
     },
     {
-        q: "Cosa si intende per 'Universal Design for Learning' (UDL)?",
+        q: "Secondo Gardner, l'intelligenza dovrebbe essere vista come:",
         a: [
-            "Un metodo di insegnamento speciale rivolto esclusivamente agli alunni con disabilità certificata.",
-            "Un approccio volto a progettare l'insegnamento considerando a priori la diversità degli studenti.",
-            "L'utilizzo obbligatorio di tecnologie digitali e software di coding in ogni ora di lezione frontale.",
-            "Una strategia di valutazione che prevede prove differenziate solo per gli alunni che presentano DSA."
+            "Una singola entità statica misurabile attraverso test standardizzati volti a definire il quoziente intellettivo (QI).",
+            "Un insieme pluralistico di facoltà mentali (almeno 7 o 9) che si manifestano in ambiti e contesti culturali differenti.",
+            "La capacità di adattarsi passivamente all'ambiente circostante senza la necessità di utilizzare linguaggi simbolici.",
+            "Un processo mentale finalizzato esclusivamente alla produzione di risposte corrette in ambito logico-matematico."
+        ],
+        c: 1
+    },
+    {
+        q: "Cosa si intende per 'interdipendenza funzionale' all'interno di un gruppo classe?",
+        a: [
+            "La dipendenza assoluta di ogni studente dalle decisioni prese dal docente durante lo svolgimento delle attività.",
+            "L'azione organizzata dei membri del gruppo che collaborano per il raggiungimento di un obiettivo comune condiviso.",
+            "La suddivisione dei compiti in modo che ogni studente possa lavorare ignorando il contributo dei propri compagni.",
+            "Un sistema di valutazione in cui il voto finale di ogni studente è indipendente dalla performance collettiva del gruppo."
+        ],
+        c: 1
+    },
+    {
+        q: "Il 'Circle Time' è una metodologia didattica volta a:",
+        a: [
+            "Monitorare il tempo di attenzione dei singoli alunni durante le spiegazioni frontali di concetti astratti.",
+            "Facilitare la comunicazione e la conoscenza reciproca attraverso un momento strutturato di vita scolastica.",
+            "Garantire l'ordine alfabetico durante gli spostamenti degli studenti tra l'aula e i laboratori didattici.",
+            "Isolare gli alunni con comportamenti problematici per permettere al resto della classe di lavorare in silenzio."
+        ],
+        c: 1
+    },
+    {
+        q: "Le tecnologie 'inclusive', rispetto alle tecnologie assistive tradizionali:",
+        a: [
+            "Sono progettate esclusivamente per aumentare le capacità funzionali delle persone con disabilità certificate.",
+            "Possono essere utili per tutti gli studenti, non solo per quelli con disabilità, favorendo la personalizzazione.",
+            "Richiedono l'uso obbligatorio di hardware costosi e programmi non accessibili tramite i comuni dispositivi mobili.",
+            "Sostituiscono completamente il ruolo del docente nell'interazione sociale all'interno dell'ambiente di apprendimento."
+        ],
+        c: 1
+    },
+    {
+        q: "La 'profezia che si autoavvera' (Effetto Pigmalione) suggerisce che:",
+        a: [
+            "I risultati degli studenti non sono influenzati dalle aspettative o dai pregiudizi espressi dai loro insegnanti.",
+            "Le aspettative positive o negative del docente possono influenzare concretamente le prestazioni degli alunni.",
+            "Il successo formativo dipende esclusivamente dalle condizioni socio-economiche di partenza della famiglia.",
+            "La valutazione deve essere sempre oggettiva e priva di qualsiasi coinvolgimento emotivo tra docente e allievo."
+        ],
+        c: 1
+    },
+    {
+        q: "Nella didattica dell'errore, lo sbaglio viene considerato:",
+        a: [
+            "Un fallimento del processo educativo che deve essere sanzionato tempestivamente per evitare ripetizioni.",
+            "Una risorsa e un'opportunità di apprendimento che favorisce lo sviluppo della capacità di autocorrezione.",
+            "Un evento casuale che non fornisce alcuna indicazione utile sui processi cognitivi messi in atto dall'alunno.",
+            "Un segnale di pigrizia che richiede l'assegnazione di compiti supplementari per consolidare le conoscenze."
         ],
         c: 1
     }
-    /* ... il sistema caricherà altre 20 domande simili dai PDF[span_10](start_span)[span_10](end_span)[span_11](start_span)[span_11](end_span)[span_12](start_span)[span_12](end_span) ... */
+    // Aggiungi qui altre domande dai PDF seguendo questo stile bilanciato
 ];
 
-// Per il test, aggiungiamo altre domande generate con la stessa logica di difficoltà
-while(pool.length < 50) {
-    let base = pool[Math.floor(Math.random()*pool.length)];
-    pool.push({
-        q: "(Hard-Mode) Approfondimento: " + base.q,
-        a: base.a.map(x => x),
-        c: base.c
+// Funzione di shuffle per l'intero database
+function getDailyQuestions() {
+    let pool = [...masterPool].sort(() => 0.5 - Math.random()).slice(0, 30);
+    return pool.map(item => {
+        // Shuffle delle opzioni internamente per non avere la risposta giusta sempre nella stessa posizione
+        let originalCorrect = item.a[item.c];
+        let shuffledA = [...item.a].sort(() => 0.5 - Math.random());
+        return {
+            q: item.q,
+            a: shuffledA,
+            c: shuffledA.indexOf(originalCorrect)
+        };
     });
 }
 
-let active = [], curr = 0, rCount = 0, wCount = 0, userAnswers = [];
-
-function start() {
-    active = pool.sort(() => 0.5 - Math.random()).slice(0, 30);
-    render();
-}
+let activeQuiz = getDailyQuestions();
+let currentIdx = 0;
+let correctHits = 0;
+let wrongHits = 0;
+let answersLog = [];
 
 function render() {
-    const data = active[curr];
-    document.getElementById('pos').innerText = (curr + 1) + " / 30";
-    document.getElementById('bar-fill').style.width = (curr / 30 * 100) + "%";
+    const data = activeQuiz[currentIdx];
+    document.getElementById('pos').innerText = (currentIdx + 1) + " / 30";
+    document.getElementById('bar-fill').style.width = (currentIdx / 30 * 100) + "%";
     document.getElementById('q-txt').innerText = data.q;
     
     const list = document.getElementById('opt-list');
@@ -209,7 +259,7 @@ function render() {
         d.onclick = () => {
             document.querySelectorAll('.opt').forEach(x => x.classList.remove('active'));
             d.classList.add('active');
-            userAnswers[curr] = i;
+            answersLog[currentIdx] = i;
             document.getElementById('next-btn').disabled = false;
         };
         list.appendChild(d);
@@ -217,11 +267,11 @@ function render() {
 }
 
 document.getElementById('next-btn').onclick = () => {
-    if(userAnswers[curr] === active[curr].c) rCount++; else wCount++;
-    document.getElementById('r-val').innerText = rCount;
-    document.getElementById('w-val').innerText = wCount;
-    curr++;
-    if(curr < 30) { render(); document.getElementById('next-btn').disabled = true; }
+    if(answersLog[currentIdx] === activeQuiz[currentIdx].c) correctHits++; else wrongHits++;
+    document.getElementById('r-val').innerText = correctHits;
+    document.getElementById('w-val').innerText = wrongHits;
+    currentIdx++;
+    if(currentIdx < 30) { render(); document.getElementById('next-btn').disabled = true; }
     else finish();
 };
 
@@ -229,26 +279,27 @@ function finish() {
     document.getElementById('quiz-ui').classList.add('hidden');
     document.getElementById('res-ui').classList.remove('hidden');
     document.getElementById('bar-fill').style.width = "100%";
-    document.getElementById('f-score').innerText = rCount + " / 30";
-    document.getElementById('f-msg').innerText = rCount > 25 ? "Eccellente! Hai una padronanza critica dei concetti." : "Ripassa gli argomenti dove hai risposto in modo errato.";
+    document.getElementById('f-score').innerText = correctHits + " / 30";
+    document.getElementById('f-msg').innerText = correctHits > 24 ? "Preparazione eccellente. Sei pronto per l'esame." : "Alcuni concetti richiedono un ulteriore approfondimento critico.";
 }
 
 document.getElementById('rev-btn').onclick = () => {
     const ui = document.getElementById('rev-ui');
     ui.classList.toggle('hidden');
-    ui.innerHTML = '<h3>Revisione Dettagliata</h3>';
-    active.forEach((q, i) => {
-        const correct = q.c === userAnswers[i];
+    ui.innerHTML = '<h3>Dettaglio Risposte</h3>';
+    activeQuiz.forEach((q, i) => {
+        const ok = q.c === answersLog[i];
         const d = document.createElement('div');
         d.className = 'rev-item';
         d.innerHTML = `<strong>${i+1}. ${q.q}</strong><br>
-        <div style="color:${correct ? 'var(--correct)':'var(--wrong)'}; margin-top:5px;">Tua risposta: ${q.a[userAnswers[i]]}</div>
-        ${!correct ? '<div style="color:var(--correct)">Corretta: ' + q.a[q.c] + '</div>' : ''}`;
+        <div style="color:${ok ? 'var(--correct)':'var(--wrong)'}; margin-top:5px;">Scelta: ${q.a[answersLog[i]]}</div>
+        ${!ok ? '<div style="color:var(--correct)">Corretta: ' + q.a[q.c] + '</div>' : ''}`;
         ui.appendChild(d);
     });
 };
 
-start();
+render();
 </script>
 </body>
 </html>
+
