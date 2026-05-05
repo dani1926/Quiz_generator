@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulatore Esame: Didattica Generale e Inclusione</title>
+    <style>
+        :root {
+            --bg-color: #131314;
+            --card-bg: #1e1f20;
+            --text-color: #e3e3e3;
+            --accent-color: #a8c7fa;
+            --correct-color: #34a853;
+            --wrong-color: #ea4335;
+            --border-color: #444746;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        #quiz-container {
+            width: 100%;
+            max-width: 650px;
+            padding: 20px;
+        }
+
+        /* Progress & Header */
+        .header { margin-bottom: 25px; position: sticky; top: 0; background: var(--bg-color); padding-top: 10px; z-index: 10; }
+        .progress-bar-bg { background: #333; height: 6px; border-radius: 3px; margin-bottom: 15px; }
+        #progress-fill { height: 100%; background: #4447e5; width: 0%; transition: width 0.3s ease; border-radius: 3px; }
+        .stats { display: flex; align-items: center; justify-content: flex-end; gap: 12px; font-size: 14px; }
+        .stat-badge { display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-weight: bold; }
+        .stat-wrong { background: rgba(234, 67, 53, 0.15); color: #f28b82; border: 1px solid rgba(234, 67, 53, 0.3); }
+        .stat-correct { background: rgba(52, 168, 83, 0.15); color: #81c995; border: 1px solid rgba(52, 168, 83, 0.3); }
+
+        /* Card Domanda */
+        .question-box { margin-top: 20px; }
+        .q-meta { color: #9aa0a6; font-size: 14px; margin-bottom: 12px; display: block; }
+        .q-text { font-size: 1.2rem; line-height: 1.5; margin-bottom: 30px; font-weight: 500; }
+
+        /* Opzioni */
+        .options-list { display: flex; flex-direction: column; gap: 12px; }
+        .opt {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .opt:hover { background-color: #2d2f31; border-color: #5f6368; }
+        .opt.selected { border-color: var(--accent-color); background-color: rgba(168, 199, 250, 0.08); }
+        .opt-letter { font-weight: bold; color: #9aa0a6; min-width: 20px; }
+
+        /* Bottoni */
+        .controls { margin-top: 40px; display: flex; justify-content: flex-end; }
+        .btn-main {
+            background-color: var(--accent-color);
+            color: #041e49;
+            border: none;
+            padding: 14px 36px;
+            border-radius: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.1s;
+        }
+        .btn-main:active { transform: scale(0.97); }
+        .btn-main:disabled { background-color: #3c4043; color: #80868b; cursor: not-allowed; }
+
+        /* Risultati e Review */
+        .hidden { display: none !important; }
+        .results-card { text-align: center; padding: 40px 20px; background: var(--card-bg); border-radius: 24px; border: 1px solid var(--border-color); }
+        .score-big { font-size: 4rem; color: var(--accent-color); font-weight: 800; margin: 10px 0; }
+        .review-section { margin-top: 40px; }
+        .review-item { padding: 20px; border-bottom: 1px solid var(--border-color); }
+        .ans-row { margin-top: 8px; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <!-- UI QUIZ -->
+    <div id="quiz-view">
+        <div class="header">
+            <div class="progress-bar-bg"><div id="progress-fill"></div></div>
+            <div class="stats">
+                <span id="q-counter" style="margin-right: auto; color: #9aa0a6;">1 / 30</span>
+                <div class="stat-badge stat-wrong">✕ <span id="wrong-count">0</span></div>
+                <div class="stat-badge stat-correct">✓ <span id="correct-count">0</span></div>
+            </div>
+        </div>
+
+        <div class="question-box">
+            <span class="q-meta">Domanda d'esame</span>
+            <div class="q-text" id="display-question">Caricamento banca dati...</div>
+            <div class="options-list" id="display-options"></div>
+        </div>
+
+        <div class="controls">
+            <button id="btn-next" class="btn-main" disabled>Avanti</button>
+        </div>
+    </div>
+
+    <!-- UI RISULTATI -->
+    <div id="result-view" class="hidden">
+        <div class="results-card">
+            <h2>Esame Concluso</h2>
+            <div class="score-big" id="final-score">0/30</div>
+            <p id="feedback-msg">Ottimo lavoro!</p>
+            <div style="margin-top:30px; display:flex; flex-direction:column; gap:10px;">
+                <button class="btn-main" onclick="location.reload()">Nuova simulazione (30 domande diverse)</button>
+                <button id="btn-review" style="background:none; color:var(--accent-color); border:1px solid var(--accent-color); padding:10px; border-radius:20px; cursor:pointer;">Ripassa gli errori</button>
+            </div>
+        </div>
+
+        <div id="review-list" class="review-section hidden">
+            <h3>Riepilogo Risposte</h3>
+            <!-- Generato via JS -->
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * BANCA DATI COMPLETA[span_6](start_span)[span_6](end_span)[span_7](start_span)[span_7](end_span)[span_8](start_span)[span_8](end_span)
+ * Inserisco un set massiccio di domande basato sui file forniti.
+ */
+const fullQuestionBank = [
+    // 1. COSTRUTTIVISMO
+    { q: "Il costruttivismo è:", a: ["una teoria della conoscenza secondo la quale la conoscenza e il sapere sono il prodotto delle azioni di un soggetto attivo in funzione adattativa con la realtà", "pura ripetizione mnemonica", "un sistema di punizioni", "una fase della progettazione"], c: 0 },
+    { q: "Per il costruttivismo la conoscenza non è:", a: ["pura ripetizione mnemonica", "azione", "costruzione", "adattamento"], c: 0 },
+    { q: "L'ambiente di apprendimento costruttivista:", a: ["è uno spazio d'azione predisposto intenzionalmente dall'insegnante", "è casuale", "dipende solo dai genitori", "è gestito dal dirigente"], c: 0 },
+    { q: "Uno dei seguenti elementi non rientra nella costruzione di un ambiente costruttivista:", a: ["dirigente scolastico", "alunno", "docente", "materiali"], c: 0 },
+    { q: "In una logica costruttivista il docente:", a: ["progetta l'ambiente affinché l'alunno possa agire da solo, ma mantiene legame di fiducia", "spiega solo alla lavagna", "osserva senza mai intervenire", "corregge solo alla fine dell'anno"], c: 0 },
+
+    // 2. PROGETTAZIONE
+    { q: "Chi si pone problemi di progettazione, realizza:", a: ["mondi possibili", "testi scolastici", "piani finanziari", "regolamenti"], c: 0 },
+    { q: "Una competenza dell'educatore dovrebbe essere:", a: ["l'intenzionalità pedagogica", "l'autoritarismo", "la velocità di scrittura", "l'indifferenza"], c: 0 },
+    { q: "Su quale tappa si basa maggiormente l'approccio sinottico razionale:", a: ["ideazione/progettazione", "attivazione", "condivisione", "valutazione"], c: 0 },
+    { q: "Un progetto formativo deve rispondere a:", a: ["fattibilità e spendibilità", "bellezza e costo", "casualità", "volontà politica"], c: 0 },
+    { q: "Quale approccio alla progettazione è il meno strutturato:", a: ["euristico", "sinottico", "razionale", "concertativo"], c: 0 },
+
+    // 3. RIFLESSIVITÀ & SCHÖN
+    { q: "Chi parla di 'epistemologia della pratica'?", a: ["D. Schön", "Dewey", "Vygotskij", "Bloom"], c: 0 },
+    { q: "Cosa intendiamo per 'riflessione sull'azione' secondo Schön?", a: ["pensare a ritroso dopo un tempo adeguato", "pensare mentre si agisce", "pianificare", "criticare i colleghi"], c: 0 },
+    { q: "Cosa intendiamo per 'riflessione nel corso dell'azione'?", a: ["riflettere nel mezzo dell'azione senza interromperla", "fermarsi per pensare", "scrivere un diario", "aspettare la fine della lezione"], c: 0 },
+    { q: "La competenza riflessiva taglia trasversalmente le:", a: ["Life Skills riconosciute dall'OMS", "Hard Skills", "materie scientifiche", "norme di comportamento"], c: 0 },
+
+    // 4. METODI E CONTESTI
+    { q: "Claude Lévi-Strauss utilizza due metafore per l'insegnante:", a: ["il bricoleur e lo scienziato", "il saggio e l'allievo", "il re e il suddito", "il tecnico e l'artista"], c: 0 },
+    { q: "Cosa intendiamo per 'metodo'?", a: ["modo, criterio sistematico e funzionale di procedere finalizzato all'esito", "casualità", "fortuna", "talento naturale"], c: 0 },
+    { q: "Secondo J. Dewey il metodo è un processo volto ad escludere:", a: ["frammentarietà e incoerenza", "ordine", "riflessione", "studio"], c: 0 },
+
+    // 5. ESPERIENZA
+    { q: "Stando al concetto di incommutabilità dell'esperienza:", a: ["nessuno può fare un'esperienza al posto nostro", "l'esperienza si può vendere", "tutti facciamo la stessa cosa", "si impara solo dai libri"], c: 0 },
+    { q: "Esperienza come Erfahrung (Benjamin):", a: ["esperienza vissuta, cumulata negli anni", "esperienza che si consuma subito", "flash momentaneo", "teoria pura"], c: 0 },
+    { q: "Esperienza come Erlebnis (Benjamin):", a: ["esperienza che vive alla giornata, sugli stimoli del presente", "storia personale", "saggezza antica", "scienza"], c: 0 },
+
+    // 6. KOLB & OUTDOOR
+    { q: "Quale non è una fase del ciclo di Kolb:", a: ["pensiero retroattivo", "esperienza concreta", "osservazione riflessiva", "sperimentazione attiva"], c: 0 },
+    { q: "L'Outdoor education ruota attorno a:", a: ["ambiente naturale e spontaneità", "tecnologia digitale", "aule chiuse", "libri di testo"], c: 0 },
+    { q: "Durante le attività outdoor training si lavora sul rischio:", a: ["percepito", "reale mortale", "finanziario", "nessun rischio"], c: 0 },
+
+    // 7. INCLUSIONE & BES
+    { q: "Il processo di inserimento nelle scuole normali si verifica con:", a: ["legge 517/77", "legge 104/92", "legge 107/15", "costituzione"], c: 0 },
+    { q: "Con l'ICF, la disabilità è considerata:", a: ["relazione tra salute e fattori personali/ambientali", "una malattia", "una colpa", "un problema economico"], c: 0 },
+    { q: "La categoria BES racchiude:", a: ["disabilità 104, DSA e altri bisogni", "solo i disabili", "solo gli stranieri", "chi va male a scuola"], c: 0 },
+    { q: "Gli alunni con DSA necessitano di:", a: ["PDP (Piano Didattico Personalizzato)", "PEI", "niente", "certificazione medica 104"], c: 0 },
+
+    // 8. METODOLOGIE DIDATTICHE
+    { q: "Il Cooperative Learning si basa su:", a: ["interdipendenza positiva", "competizione", "lavoro individuale", "silenzio"], c: 0 },
+    { q: "La Peer Education è:", a: ["metodologia basata sulla trasmissione tra pari", "lezione frontale", "studio a casa", "punizione"], c: 0 },
+    { q: "Il brainstorming è noto come:", a: ["tempesta di cervelli", "calma piatta", "scelta multipla", "verifica scritta"], c: 0 },
+    { q: "Il Role Playing formativo è un gioco di ruolo:", a: ["educativo", "pericoloso", "digitale", "agonistico"], c: 0 },
+    { q: "Il tempo del cerchio (Circle Time) facilita:", a: ["comunicazione e conoscenza reciproca", "ordine alfabetico", "silenzio assoluto", "la merenda"], c: 0 },
+
+    // 9. MAPPE & METACOGNIZIONE
+    { q: "Le mappe mentali si distinguono per:", a: ["presenza di idea centrale e collegamenti periferici", "gerarchia rigida", "assenza di colori", "solo testo"], c: 0 },
+    { q: "La metacognizione è:", a: ["consapevolezza e controllo dei processi cognitivi", "memoria a breve termine", "capacità fisica", "velocità di calcolo"], c: 0 },
+    { q: "Chi ha uno stile cognitivo convergente:", a: ["utilizza pensiero logico e consequenziale", "è solo creativo", "non studia", "cambia sempre idea"], c: 0 },
+
+    // 10. NEUROSCIENZE & UDL
+    { q: "L'UDL (Universal Design for Learning) serve per:", a: ["progettare per tutti a priori", "fare lezioni speciali per pochi", "usare solo il tablet", "eliminare le verifiche"], c: 0 },
+    { q: "La rete di riconoscimento riguarda:", a: ["il COSA dell'apprendimento", "il COME", "il PERCHÉ", "il QUANDO"], c: 0 },
+    { q: "Le reti strategiche riguardano:", a: ["il COME (pianificazione ed esecuzione)", "il COSA", "il PERCHÉ", "il DOVE"], c: 0 },
+    { q: "L'effetto Pigmalione riguarda:", a: ["l'influenza delle aspettative del docente sui risultati", "la forza fisica", "l'uso del computer", "la grammatica"], c: 0 },
+    { q: "L'amigdala è coinvolta nella:", a: ["valutazione emotiva degli eventi", "vista", "digestione", "matematica"], c: 0 }
+];
+
+/** LOGICA QUIZ **/
+let activeQuestions = [];
+let currentIdx = 0;
+let correctHits = 0;
+let wrongHits = 0;
+let userLog = [];
+
+function setupQuiz() {
+    // Mescola tutto il pool e prendine 30
+    activeQuestions = [...fullQuestionBank]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 30)
+        .map(obj => {
+            // Rimescola anche le opzioni per ogni domanda
+            let originalCorrectText = obj.a[obj.c];
+            let shuffledOptions = [...obj.a].sort(() => 0.5 - Math.random());
+            return {
+                q: obj.q,
+                options: shuffledOptions,
+                correctIdx: shuffledOptions.indexOf(originalCorrectText)
+            };
+        });
+    
+    renderCurrentQuestion();
+}
+
+function renderCurrentQuestion() {
+    const data = activeQuestions[currentIdx];
+    
+    // Update Header
+    document.getElementById('q-counter').innerText = `${currentIdx + 1} / 30`;
+    document.getElementById('progress-fill').style.width = `${((currentIdx) / 30) * 100}%`;
+    
+    // Text
+    document.getElementById('display-question').innerText = data.q;
+    
+    // Options
+    const optList = document.getElementById('display-options');
+    optList.innerHTML = '';
+    data.options.forEach((txt, i) => {
+        const div = document.createElement('div');
+        div.className = 'opt';
+        div.innerHTML = `<span class="opt-letter">${String.fromCharCode(65 + i)}.</span> <span>${txt}</span>`;
+        div.onclick = () => selectOpt(i, div);
+        optList.appendChild(div);
+    });
+
+    document.getElementById('btn-next').disabled = true;
+}
+
+function selectOpt(idx, el) {
+    document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    userLog[currentIdx] = idx;
+    document.getElementById('btn-next').disabled = false;
+}
+
+document.getElementById('btn-next').onclick = () => {
+    const isCorrect = userLog[currentIdx] === activeQuestions[currentIdx].correctIdx;
+    
+    if (isCorrect) {
+        correctHits++;
+        document.getElementById('correct-count').innerText = correctHits;
+    } else {
+        wrongHits++;
+        document.getElementById('wrong-count').innerText = wrongHits;
+    }
+
+    currentIdx++;
+    if (currentIdx < 30) {
+        renderCurrentQuestion();
+    } else {
+        showFinalResults();
+    }
+};
+
+function showFinalResults() {
+    document.getElementById('quiz-view').classList.add('hidden');
+    document.getElementById('result-view').classList.remove('hidden');
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('final-score').innerText = `${correctHits} / 30`;
+    
+    let msg = "Puoi fare di meglio, ripassa i concetti chiave.";
+    if (correctHits >= 27) msg = "Eccellente! Sei prontissimo per l'esame.";
+    else if (correctHits >= 21) msg = "Buona preparazione, ma attenzione alle distrazioni.";
+    document.getElementById('feedback-msg').innerText = msg;
+}
+
+document.getElementById('btn-review').onclick = () => {
+    const revList = document.getElementById('review-list');
+    revList.classList.remove('hidden');
+    revList.innerHTML = '<h3>Riepilogo Risposte</h3>';
+
+    activeQuestions.forEach((q, i) => {
+        const userPick = userLog[i];
+        const correctPick = q.correctIdx;
+        const isRight = userPick === correctPick;
+
+        const item = document.createElement('div');
+        item.className = 'review-item';
+        item.innerHTML = `
+            <p><strong>${i+1}. ${q.q}</strong></p>
+            <div class="ans-row" style="color: ${isRight ? '#81c995' : '#f28b82'}">
+                Tua risposta: ${q.options[userPick]} ${isRight ? '✓' : '✕'}
+            </div>
+            ${!isRight ? `<div class="ans-row" style="color: #81c995">Corretta: ${q.options[correctPick]}</div>` : ''}
+        `;
+        revList.appendChild(item);
+    });
+};
+
+// Start
+setupQuiz();
+</script>
+
+</body>
+</html>
