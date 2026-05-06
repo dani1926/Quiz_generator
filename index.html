@@ -74,7 +74,7 @@
         <p style="color: #9aa0a6; font-size: 0.95rem;">Genera un prompt perfetto scegliendo la difficoltà. Copialo in un'IA insieme ai tuoi PDF per estrarre il database.</p>
         
         <div class="form-group" style="background: rgba(168, 199, 250, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--accent);">
-            <label for="diff-select" style="color: var(--accent);">Livello di Difficoltà del Quiz</label>
+            <label for="diff-select" style="color: var(--accent);">Livello di Difficoltà dei Distrattori</label>
             <select id="diff-select">
                 <option value="FACILE">Facile (Errori evidenti e logici)</option>
                 <option value="DIFFICILE" selected>Difficile (Linguaggio accademico, errori sottili)</option>
@@ -99,7 +99,7 @@
 
         <div class="form-group">
             <label for="json-data">Base Dati</label>
-            <textarea id="json-data" placeholder='Incolla qui tutti i blocchi JSON generati dall&apos;IA uno sotto l&apos;altro.&#10;&#10;Il sistema rimuoverà in automatico i codici "span_" di Gemini e organizzerà i distrattori per te!'></textarea>
+            <textarea id="json-data" placeholder='Incolla qui tutti i blocchi JSON generati dall&apos;IA uno sotto l&apos;altro.&#10;&#10;Il sistema rimuoverà in automatico i testi extra (come i contatori delle domande e i codici di Gemini) e organizzerà i distrattori per te!'></textarea>
         </div>
 
         <div style="text-align: right;">
@@ -163,38 +163,35 @@ function updatePrompts() {
     let ruleText = "";
 
     if (diff === "FACILE") {
-        ruleText = "Devono essere plausibili ma contenere errori logici o concettuali evidenti per chi ha letto il testo.";
+        ruleText = "Devono essere plausibili ma contenere errori logici o concettuali evidenti per chi ha studiato.";
     } else if (diff === "DIFFICILE") {
         ruleText = "Devono utilizzare un rigoroso linguaggio accademico e presentare sfumature o errori sottili, mescolando concetti simili per mettere in difficoltà lo studente.";
     } else if (diff === "ESTREMO") {
-        ruleText = "Devono essere dei veri e propri trabocchetti. Utilizza terminologia esatta tratta dal testo ma applicata al contesto sbagliato. Devono sembrare corretti a una prima lettura distratta.";
+        ruleText = "Devono essere veri e propri trabocchetti. Utilizza terminologia esatta tratta dal testo ma applicata al contesto sbagliato. Devono sembrare perfetti a una lettura distratta.";
     }
 
     prompt1.innerText = `Agisci come un esperto analista dati e instructional designer. Il tuo compito è estrarre le domande dai documenti allegati e generare per ciascuna 3 distrattori (risposte errate) impostati sul livello di difficoltà: ${diff}.
-Lavoreremo rigorosamente a blocchi di 20 domande per volta per non esaurire la tua memoria.
 
 REGOLE DI ESTRAZIONE E GENERAZIONE:
 1. Estrai la domanda e la risposta ESATTA originale.
-2. Genera 3 DISTRATTORI. Regola per il livello ${diff}: ${ruleText} I distrattori devono avere circa la stessa lunghezza della risposta esatta.
-3. Pulisci il testo da numeri progressivi (es. "1."), lettere (es. "A)"), link o intestazioni.
+2. Genera 3 DISTRATTORI. Regola per il livello ${diff}: ${ruleText} I distrattori devono avere la stessa lunghezza della risposta esatta.
+3. Pulisci il testo da numeri progressivi (es. "1."), lettere, link o intestazioni.
 
-FORMATO DI OUTPUT (TASSATIVO):
-Restituisci un array JSON di stringhe. Ogni stringa DEVE avere 5 elementi separati dal carattere pipe "|":
+OTTIMIZZAZIONE E FORMATO OUTPUT:
+Processa in autonomia il numero MASSIMO di domande che riesci a gestire in un singolo output assicurandoti di chiudere SEMPRE correttamente il blocco JSON.
+Restituisci l'array JSON di stringhe in un blocco markdown (\`\`\`json). Ogni stringa DEVE avere 5 elementi separati dal carattere pipe "|":
 Domanda | Risposta Esatta | Distrattore 1 | Distrattore 2 | Distrattore 3
 
-ISTRUZIONI OPERATIVE:
-Estrai ed elabora ESCLUSIVAMENTE le prime 20 domande.
-Usa un blocco di codice markdown (\`\`\`json).
-Al termine, scrivi fuori dal blocco: "BLOCCO COMPLETATO. Scrivi CONTINUA per le prossime 20".
+REPORT E CONTINUAZIONE (TASSATIVO):
+Fuori dal blocco JSON, alla fine del tuo messaggio, scrivi un resoconto esatto in questo formato:
+✅ Generate in questo blocco: [X]
+📊 Totale estratte finora: [Y]
+⏳ Domande rimanenti nel documento (stima): [Z]
+Scrivi CONTINUA per procedere con il resto del documento.`;
 
-ESEMPIO:
-\`\`\`json
-[
-  "Il costruttivismo è: | una teoria secondo la quale il sapere è prodotto da un soggetto attivo | distrattore errato 1 | distrattore errato 2 | distrattore errato 3"
-]
-\`\`\``;
-
-    prompt2.innerText = `CONTINUA. Estrai e processa le successive 20 domande ripartendo esattamente da dove ti sei fermato. Genera i 3 distrattori per ognuna mantenendo il livello di difficoltà ${diff}. Usa le stesse identiche regole e lo stesso formato (Domanda | Esatta | Err1 | Err2 | Err3).`;
+    prompt2.innerText = `CONTINUA. Ripartendo ESATTAMENTE dalla domanda successiva all'ultima che hai processato, estrai il prossimo blocco massimo di domande.
+Mantieni la difficoltà ${diff} per i distrattori e usa lo stesso formato JSON a 5 campi (Domanda | Esatta | Err1 | Err2 | Err3).
+Assicurati di chiudere correttamente il JSON. Al termine, scrivi di nuovo il resoconto aggiornato con le domande rimanenti stimate.`;
 }
 
 diffSelect.addEventListener('change', updatePrompts);
@@ -202,7 +199,7 @@ diffSelect.addEventListener('change', updatePrompts);
 updatePrompts();
 
 // ==========================================
-// LOCALSTORAGE
+// LOCALSTORAGE E RESTO DELLA LOGICA
 // ==========================================
 const STORAGE_KEY = 'byod_quizzes_pro';
 
@@ -260,9 +257,6 @@ function startFromSaved(index) {
 
 loadSavedQuizzes();
 
-// ==========================================
-// PARSER ROBUSTO & CLEANER TESTO
-// ==========================================
 document.getElementById('btn-build').onclick = () => {
     document.getElementById('error-box').classList.add('hidden');
     document.getElementById('success-box').classList.add('hidden');
@@ -277,16 +271,15 @@ document.getElementById('btn-build').onclick = () => {
 
     let parsedArray = [];
 
-    // 1. PULIZIA MARKDOWN E VIRGOLETTE
+    // PULIZIA MARKDOWN E VIRGOLETTE
     let cleanData = rawData.replace(/```[a-z]*\s*/ig, '').replace(/```/g, '').trim();
     cleanData = cleanData.replace(/[“”]/g, '"'); 
     
-    // 2. PULIZIA ARTEFATTI IA (Rimuove tag nascosti tipo span_1](start_span) di Gemini)
+    // PULIZIA ARTEFATTI IA
     cleanData = cleanData.replace(/\[?span_\d+\]?\((?:start_span|end_span)\)/g, '');
     cleanData = cleanData.replace(/\(start_span\)|\(end_span\)/g, '');
     
     try {
-        // Estrazione delle righe contenenti almeno 4 pipe (|) che indicano i 5 campi
         parsedArray = cleanData.split('\n')
             .map(line => line.trim().replace(/^["\[\]\s,]+/, '').replace(/["\[\]\s,]+$/, '')) 
             .filter(line => (line.match(/\|/g) || []).length >= 4); 
@@ -318,18 +311,11 @@ function showError(msg) {
     box.classList.remove('hidden');
 }
 
-// ==========================================
-// MOTORE QUIZ
-// ==========================================
 function prepareEngineAndStart(parsedArray) {
     db = parsedArray.map(line => {
         let parts = line.split('|').map(p => p.trim());
         if(parts.length >= 5) {
-            return {
-                q: parts[0],
-                c: parts[1],
-                distractors: [parts[2], parts[3], parts[4]]
-            };
+            return { q: parts[0], c: parts[1], distractors: [parts[2], parts[3], parts[4]] };
         }
         return null;
     }).filter(item => item !== null && item.q !== "");
@@ -342,12 +328,7 @@ function prepareEngineAndStart(parsedArray) {
     
     activeQuiz = selectedQuestions.map(item => {
         let options = [item.c, ...item.distractors].sort(() => 0.5 - Math.random());
-        return { 
-            q: item.q, 
-            a: options, 
-            correctIdx: options.indexOf(item.c), 
-            correctText: item.c 
-        };
+        return { q: item.q, a: options, correctIdx: options.indexOf(item.c), correctText: item.c };
     });
 
     currentIdx = 0; correctHits = 0; wrongHits = 0; answersLog = [];
@@ -397,9 +378,6 @@ document.getElementById('next-btn').onclick = () => {
     }
 };
 
-// ==========================================
-// RISULTATI E REVISIONE
-// ==========================================
 function showResults() {
     let limit = activeQuiz.length;
     document.getElementById('quiz-view').classList.add('hidden');
