@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generatore Simulatore Esami</title>
+    <title>Generatore Simulatore Esami PRO</title>
     <style>
         :root {
             --bg: #131314; --card: #1e1f20; --txt: #e3e3e3; 
@@ -12,29 +12,25 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--txt); display: flex; justify-content: center; margin: 0; padding: 15px; }
         #container { width: 100%; max-width: 700px; padding-bottom: 50px; }
         
-        /* Moduli e Card */
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 25px; margin-bottom: 20px; }
         .hidden { display: none !important; }
         
-        /* Setup UI Elements */
         h1, h2, h3 { margin-top: 0; }
         .step-title { color: var(--accent); font-size: 1.1rem; margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
         .prompt-box { background: #000; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #a8c7fa; white-space: pre-wrap; margin-bottom: 15px; max-height: 250px; overflow-y: auto; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #9aa0a6; font-size: 0.9rem; }
-        input[type="text"], textarea { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); color: var(--txt); border-radius: 8px; font-family: inherit; font-size: 1rem; box-sizing: border-box; }
-        input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--accent); }
+        input[type="text"], textarea, select { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); color: var(--txt); border-radius: 8px; font-family: inherit; font-size: 1rem; box-sizing: border-box; }
+        input[type="text"]:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
         textarea { resize: vertical; min-height: 150px; }
         .error-msg { background: rgba(234,67,53,0.1); color: var(--wrong); padding: 12px; border-radius: 8px; border: 1px solid rgba(234,67,53,0.3); margin-bottom: 20px; font-size: 0.9rem; }
         .success-msg { background: rgba(52,168,83,0.1); color: var(--correct); padding: 12px; border-radius: 8px; border: 1px solid rgba(52,168,83,0.3); margin-bottom: 20px; font-size: 0.9rem; }
 
-        /* Buttons */
         .btn { background: var(--accent); color: #041e49; border: none; padding: 12px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: transform 0.1s; }
         .btn:active { transform: scale(0.98); }
         .btn:disabled { background: #3c4043; color: #80868b; cursor: not-allowed; }
         .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
         
-        /* Saved Quizzes UI */
         .saved-item { display: flex; justify-content: space-between; align-items: center; background: #000; border: 1px solid #333; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: 0.2s;}
         .saved-item:hover { border-color: var(--accent); }
         .saved-title { font-weight: bold; color: var(--accent); }
@@ -42,7 +38,6 @@
         .del-btn { background: transparent; color: var(--wrong); border: none; font-weight: bold; cursor: pointer; padding: 5px 10px; border-radius: 5px;}
         .del-btn:hover { background: rgba(234,67,53,0.1); }
 
-        /* Quiz UI Elements */
         .header { position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 10; border-bottom: 1px solid #333; margin-bottom: 20px; }
         .quiz-title-display { font-size: 1.2rem; font-weight: bold; color: var(--accent); margin-bottom: 15px; text-align: center; }
         .bar-bg { background: #333; height: 8px; border-radius: 4px; margin-bottom: 15px; overflow: hidden;}
@@ -59,7 +54,6 @@
         .letter { color: #9aa0a6; font-weight: bold; min-width: 25px; }
         .footer { margin-top: 30px; display: flex; justify-content: flex-end; }
         
-        /* Review UI */
         .res-card { text-align: center; }
         .rev-item { padding: 20px 0; border-bottom: 1px solid #333; }
         .rev-ans { margin-top: 8px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.03); font-size: 0.95rem;}
@@ -70,52 +64,42 @@
 <div id="container">
     
     <div id="setup-view" class="card">
-        <h1>Configura il Quiz</h1>
+        <h1>Configura il Quiz PRO</h1>
         
         <div id="saved-section" class="hidden" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #333;">
             <h3 style="color: var(--correct)">I tuoi Quiz Salvati</h3>
             <div id="saved-list"></div>
         </div>
 
-        <p style="color: #9aa0a6; font-size: 0.95rem;">Usa i prompt qui sotto in ChatGPT, Claude o Gemini insieme ai tuoi PDF per estrarre la base dati senza perdere alcuna informazione.</p>
+        <p style="color: #9aa0a6; font-size: 0.95rem;">Genera un prompt perfetto scegliendo la difficoltà. Copialo in un'IA insieme ai tuoi PDF per estrarre il database.</p>
         
+        <div class="form-group" style="background: rgba(168, 199, 250, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--accent);">
+            <label for="diff-select" style="color: var(--accent);">Livello di Difficoltà del Quiz</label>
+            <select id="diff-select">
+                <option value="FACILE">Facile (Errori evidenti e logici)</option>
+                <option value="DIFFICILE" selected>Difficile (Linguaggio accademico, errori sottili)</option>
+                <option value="ESTREMO">Estremo (Trabocchetti e concetti mischiati dal testo reale)</option>
+            </select>
+        </div>
+
         <div class="step-title">Step 1: Prompt Iniziale</div>
-        <p style="font-size: 0.85rem; margin-top: 0;">Copia questo e incollalo assieme ai tuoi file PDF.</p>
-        <div class="prompt-box" id="prompt-text-1">Agisci come un esperto analista dati. Devi estrarre TUTTE le domande e le relative risposte corrette dai documenti allegati, per creare un database.
-Poiché i file sono molto lunghi e per evitare che il tuo output si interrompa a metà perdendo dati, lavoreremo rigorosamente a blocchi di 50 domande.
-
-REGOLE DI ESTRAZIONE:
-1. Estrai SOLO la domanda e la risposta CORRETTA. Ignora le opzioni errate.
-2. Pulisci il testo: rimuovi numeri progressivi (es. "1."), lettere (es. "A)"), link, numeri di pagina e intestazioni.
-3. Formatta ogni riga ESATTAMENTE così: Domanda separata dalla risposta corretta dal simbolo pipe "|".
-
-ISTRUZIONI OPERATIVE:
-Per questo primo prompt, estrai ESCLUSIVAMENTE le prime 50 domande del documento.
-Restituisci l'output all'interno di un blocco di codice markdown.
-Quando hai terminato queste 50, fermati e scrivi fuori dal blocco di codice: "BLOCCO COMPLETATO. Scrivi CONTINUA per le prossime 50 domande".
-
-ESEMPIO:
-```text
-Il costruttivismo è: | una teoria della conoscenza secondo la quale...
-Per il costruttivismo la conoscenza non è: | pura ripetizione mnemonica
-```</div>
+        <div class="prompt-box" id="prompt-text-1">...</div>
 
         <div class="step-title">Step 2: Prompt di Continuazione</div>
-        <p style="font-size: 0.85rem; margin-top: 0;">Quando l'IA si ferma, usa questo comando per farle generare le successive 50 domande, finché il file non è finito.</p>
-        <div class="prompt-box" id="prompt-text-2">CONTINUA. Estrai le successive 50 domande ripartendo esattamente da dove ti sei fermato. Usa le stesse identiche regole e lo stesso formato testuale.</div>
+        <div class="prompt-box" id="prompt-text-2">...</div>
         
         <div class="step-title">Step 3: Incolla e Crea</div>
         <div id="error-box" class="error-msg hidden"></div>
         <div id="success-box" class="success-msg hidden"></div>
 
         <div class="form-group">
-            <label for="quiz-title">Titolo del Quiz (Serve per salvarlo nel browser)</label>
-            <input type="text" id="quiz-title" placeholder="Es. Esame di Didattica (Completo)">
+            <label for="quiz-title">Titolo del Quiz</label>
+            <input type="text" id="quiz-title" placeholder="Es. Didattica Generale - Modalità Estrema">
         </div>
 
         <div class="form-group">
-            <label for="json-data">Base Dati (Incolla qui tutti i blocchi generati dall'IA)</label>
-            <textarea id="json-data" placeholder='Incolla qui tutti i risultati generati dall&apos;IA uno sotto l&apos;altro.&#10;&#10;Non preoccuparti di "pulire" il testo o togliere le frasi in mezzo come "BLOCCO COMPLETATO": il nostro sistema è intelligente, ignorerà lo sporco e prenderà solo le righe valide contenenti il simbolo "|"!'></textarea>
+            <label for="json-data">Base Dati</label>
+            <textarea id="json-data" placeholder='Incolla qui tutti i blocchi JSON generati dall&apos;IA uno sotto l&apos;altro.&#10;&#10;Il sistema rimuoverà in automatico i codici "span_" di Gemini e organizzerà i distrattori per te!'></textarea>
         </div>
 
         <div style="text-align: right;">
@@ -160,7 +144,6 @@ Per il costruttivismo la conoscenza non è: | pura ripetizione mnemonica
 <script>
 // Variabili globali
 let db = [];
-let allCorrectAnswers = [];
 let activeQuiz = [];
 let currentIdx = 0;
 let correctHits = 0;
@@ -169,9 +152,59 @@ let answersLog = [];
 let maxQuestionsForQuiz = 30; 
 
 // ==========================================
+// GESTIONE DINAMICA DEL PROMPT
+// ==========================================
+const diffSelect = document.getElementById('diff-select');
+const prompt1 = document.getElementById('prompt-text-1');
+const prompt2 = document.getElementById('prompt-text-2');
+
+function updatePrompts() {
+    let diff = diffSelect.value;
+    let ruleText = "";
+
+    if (diff === "FACILE") {
+        ruleText = "Devono essere plausibili ma contenere errori logici o concettuali evidenti per chi ha letto il testo.";
+    } else if (diff === "DIFFICILE") {
+        ruleText = "Devono utilizzare un rigoroso linguaggio accademico e presentare sfumature o errori sottili, mescolando concetti simili per mettere in difficoltà lo studente.";
+    } else if (diff === "ESTREMO") {
+        ruleText = "Devono essere dei veri e propri trabocchetti. Utilizza terminologia esatta tratta dal testo ma applicata al contesto sbagliato. Devono sembrare corretti a una prima lettura distratta.";
+    }
+
+    prompt1.innerText = `Agisci come un esperto analista dati e instructional designer. Il tuo compito è estrarre le domande dai documenti allegati e generare per ciascuna 3 distrattori (risposte errate) impostati sul livello di difficoltà: ${diff}.
+Lavoreremo rigorosamente a blocchi di 20 domande per volta per non esaurire la tua memoria.
+
+REGOLE DI ESTRAZIONE E GENERAZIONE:
+1. Estrai la domanda e la risposta ESATTA originale.
+2. Genera 3 DISTRATTORI. Regola per il livello ${diff}: ${ruleText} I distrattori devono avere circa la stessa lunghezza della risposta esatta.
+3. Pulisci il testo da numeri progressivi (es. "1."), lettere (es. "A)"), link o intestazioni.
+
+FORMATO DI OUTPUT (TASSATIVO):
+Restituisci un array JSON di stringhe. Ogni stringa DEVE avere 5 elementi separati dal carattere pipe "|":
+Domanda | Risposta Esatta | Distrattore 1 | Distrattore 2 | Distrattore 3
+
+ISTRUZIONI OPERATIVE:
+Estrai ed elabora ESCLUSIVAMENTE le prime 20 domande.
+Usa un blocco di codice markdown (\`\`\`json).
+Al termine, scrivi fuori dal blocco: "BLOCCO COMPLETATO. Scrivi CONTINUA per le prossime 20".
+
+ESEMPIO:
+\`\`\`json
+[
+  "Il costruttivismo è: | una teoria secondo la quale il sapere è prodotto da un soggetto attivo | distrattore errato 1 | distrattore errato 2 | distrattore errato 3"
+]
+\`\`\``;
+
+    prompt2.innerText = `CONTINUA. Estrai e processa le successive 20 domande ripartendo esattamente da dove ti sei fermato. Genera i 3 distrattori per ognuna mantenendo il livello di difficoltà ${diff}. Usa le stesse identiche regole e lo stesso formato (Domanda | Esatta | Err1 | Err2 | Err3).`;
+}
+
+diffSelect.addEventListener('change', updatePrompts);
+// Inizializza i prompt all'avvio
+updatePrompts();
+
+// ==========================================
 // LOCALSTORAGE
 // ==========================================
-const STORAGE_KEY = 'byod_quizzes';
+const STORAGE_KEY = 'byod_quizzes_pro';
 
 function loadSavedQuizzes() {
     const savedData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -187,7 +220,7 @@ function loadSavedQuizzes() {
             item.innerHTML = `
                 <div style="flex-grow: 1;" onclick="startFromSaved(${index})">
                     <div class="saved-title">📝 ${quiz.title}</div>
-                    <div class="saved-meta">${quiz.data.length} domande in archivio</div>
+                    <div class="saved-meta">${quiz.data.length} domande avanzate in archivio</div>
                 </div>
                 <button class="del-btn" onclick="deleteQuiz(${index})" title="Elimina">✕</button>
             `;
@@ -228,7 +261,7 @@ function startFromSaved(index) {
 loadSavedQuizzes();
 
 // ==========================================
-// PARSER ROBUSTO (ANTI-ERRORE)
+// PARSER ROBUSTO & CLEANER TESTO
 // ==========================================
 document.getElementById('btn-build').onclick = () => {
     document.getElementById('error-box').classList.add('hidden');
@@ -244,42 +277,34 @@ document.getElementById('btn-build').onclick = () => {
 
     let parsedArray = [];
 
-    // PULIZIA PREVENTIVA: Rimuove i blocchi markdown che l'IA potrebbe aver lasciato
+    // 1. PULIZIA MARKDOWN E VIRGOLETTE
     let cleanData = rawData.replace(/```[a-z]*\s*/ig, '').replace(/```/g, '').trim();
     cleanData = cleanData.replace(/[“”]/g, '"'); 
     
+    // 2. PULIZIA ARTEFATTI IA (Rimuove tag nascosti tipo span_1](start_span) di Gemini)
+    cleanData = cleanData.replace(/\[?span_\d+\]?\((?:start_span|end_span)\)/g, '');
+    cleanData = cleanData.replace(/\(start_span\)|\(end_span\)/g, '');
+    
     try {
-        // Usa il Parser a Righe per ignorare frasi sporche (es. "BLOCCO COMPLETATO")
+        // Estrazione delle righe contenenti almeno 4 pipe (|) che indicano i 5 campi
         parsedArray = cleanData.split('\n')
-            .map(line => line.trim().replace(/^["\[\]\s,]+/, '').replace(/["\[\]\s,]+$/, '')) // Pulisce i bordi di ogni riga
-            .filter(line => line.includes('|')); // Prende SOLO le righe che contengono il pipe
+            .map(line => line.trim().replace(/^["\[\]\s,]+/, '').replace(/["\[\]\s,]+$/, '')) 
+            .filter(line => (line.match(/\|/g) || []).length >= 4); 
             
         if(parsedArray.length === 0) {
             throw new Error("Nessuna riga valida trovata.");
         }
     } catch (e) {
-        showError("Non sono riuscito a trovare domande valide. Assicurati che domanda e risposta siano separate dal simbolo '|'.");
+        showError("Non sono riuscito a trovare domande valide. Assicurati che ogni riga abbia la domanda, la risposta esatta e 3 distrattori separati da '|'.");
         return;
     }
 
-    // Costruisce e valida il DB interno
-    db = parsedArray.map(line => {
-        let parts = line.split('|');
-        return { q: parts[0].trim(), c: parts[1].trim() };
-    }).filter(item => item.q.length > 0 && item.c.length > 0);
-
-    if(db.length === 0) {
-        showError("Errore nell'estrazione: nessuna coppia Domanda|Risposta individuata.");
-        return;
-    }
-
-    // Salvataggio ed esecuzione
     saveQuizToStorage(title, parsedArray);
     
     if(title !== "") document.getElementById('display-title').innerText = title;
     else document.getElementById('display-title').innerText = "Simulatore Esame";
 
-    document.getElementById('success-box').innerText = `Successo! Sono state caricate ${db.length} domande nel paniere.`;
+    document.getElementById('success-box').innerText = `Successo! Sono state caricate ${parsedArray.length} domande avanzate.`;
     document.getElementById('success-box').classList.remove('hidden');
 
     setTimeout(() => {
@@ -294,10 +319,20 @@ function showError(msg) {
 }
 
 // ==========================================
-// MOTORE QUIZ E DISTRATTORI INTELLIGENTI
+// MOTORE QUIZ
 // ==========================================
-function prepareEngineAndStart() {
-    allCorrectAnswers = db.map(item => item.c);
+function prepareEngineAndStart(parsedArray) {
+    db = parsedArray.map(line => {
+        let parts = line.split('|').map(p => p.trim());
+        if(parts.length >= 5) {
+            return {
+                q: parts[0],
+                c: parts[1],
+                distractors: [parts[2], parts[3], parts[4]]
+            };
+        }
+        return null;
+    }).filter(item => item !== null && item.q !== "");
 
     document.getElementById('setup-view').classList.add('hidden');
     document.getElementById('quiz-view').classList.remove('hidden');
@@ -306,21 +341,13 @@ function prepareEngineAndStart() {
     let selectedQuestions = [...db].sort(() => 0.5 - Math.random()).slice(0, limit);
     
     activeQuiz = selectedQuestions.map(item => {
-        let correctAns = item.c;
-        
-        let similarLengthAnswers = allCorrectAnswers.filter(a => 
-            a !== correctAns && Math.abs(a.length - correctAns.length) < 35
-        );
-        
-        if (similarLengthAnswers.length < 3) {
-            let fallback = allCorrectAnswers.filter(a => a !== correctAns);
-            similarLengthAnswers = [...new Set([...similarLengthAnswers, ...fallback])];
-        }
-        
-        let distractors = similarLengthAnswers.sort(() => 0.5 - Math.random()).slice(0, 3);
-        let options = [correctAns, ...distractors].sort(() => 0.5 - Math.random());
-        
-        return { q: item.q, a: options, correctIdx: options.indexOf(correctAns), correctText: correctAns };
+        let options = [item.c, ...item.distractors].sort(() => 0.5 - Math.random());
+        return { 
+            q: item.q, 
+            a: options, 
+            correctIdx: options.indexOf(item.c), 
+            correctText: item.c 
+        };
     });
 
     currentIdx = 0; correctHits = 0; wrongHits = 0; answersLog = [];
