@@ -25,6 +25,7 @@
         input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--accent); }
         textarea { resize: vertical; min-height: 120px; }
         .error-msg { background: rgba(234,67,53,0.1); color: var(--wrong); padding: 12px; border-radius: 8px; border: 1px solid rgba(234,67,53,0.3); margin-bottom: 20px; font-size: 0.9rem; }
+        .success-msg { background: rgba(52,168,83,0.1); color: var(--correct); padding: 12px; border-radius: 8px; border: 1px solid rgba(52,168,83,0.3); margin-bottom: 20px; font-size: 0.9rem; }
 
         /* Buttons */
         .btn { background: var(--accent); color: #041e49; border: none; padding: 12px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: transform 0.1s; }
@@ -71,13 +72,13 @@
     <div id="setup-view" class="card">
         <h1>Configura il Quiz</h1>
         
-        <!-- SEZIONE QUIZ SALVATI (Visibile solo se ci sono dati in cache) -->
+        <!-- SEZIONE QUIZ SALVATI -->
         <div id="saved-section" class="hidden" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #333;">
             <h3 style="color: var(--correct)">I tuoi Quiz Salvati</h3>
             <div id="saved-list"></div>
         </div>
 
-        <p style="color: #9aa0a6; font-size: 0.95rem;">Copia il prompt qui sotto, incollalo in un'IA insieme ai tuoi PDF e ottieni la base dati perfetta.</p>
+        <p style="color: #9aa0a6; font-size: 0.95rem;">Copia il prompt qui sotto, incollalo in ChatGPT, Claude o Gemini insieme ai tuoi PDF e ottieni la base dati.</p>
         
         <div class="prompt-box" id="prompt-text">Agisci come un esperto analista dati e instructional designer. Il tuo compito è analizzare i documenti di studio allegati a questo prompt ed estrarre tutte le informazioni per strutturare la base dati di un simulatore d'esame.
 
@@ -100,6 +101,7 @@ ESEMPIO DI OUTPUT:
 IMPORTANTE: Nessuna intro, nessuna conclusione, nessun tag markdown (no ```json). Stampa solo l'array che inizia con [ e finisce con ].</div>
         
         <div id="error-box" class="error-msg hidden"></div>
+        <div id="success-box" class="success-msg hidden"></div>
 
         <div class="form-group">
             <label for="quiz-title">Titolo del Quiz (Serve per salvarlo nel browser)</label>
@@ -108,7 +110,7 @@ IMPORTANTE: Nessuna intro, nessuna conclusione, nessun tag markdown (no ```json)
 
         <div class="form-group">
             <label for="json-data">Base Dati (Incolla qui l'output dell'IA)</label>
-            <textarea id="json-data" placeholder='[&#10;  "Domanda 1 | Risposta 1",&#10;  "Domanda 2 | Risposta 2"&#10;]'></textarea>
+            <textarea id="json-data" placeholder='Incolla qui il codice o la lista di domande. Il sistema è intelligente: basta che domanda e risposta siano separate da un |'></textarea>
         </div>
 
         <div style="text-align: right;">
@@ -153,7 +155,7 @@ IMPORTANTE: Nessuna intro, nessuna conclusione, nessun tag markdown (no ```json)
 </div>
 
 <script>
-// Variabili di stato globali
+// Variabili globali
 let db = [];
 let allCorrectAnswers = [];
 let activeQuiz = [];
@@ -161,10 +163,10 @@ let currentIdx = 0;
 let correctHits = 0;
 let wrongHits = 0;
 let answersLog = [];
-let maxQuestionsForQuiz = 30; // Quante domande per sessione
+let maxQuestionsForQuiz = 30; 
 
 // ==========================================
-// FASE 0: GESTIONE LOCALSTORAGE
+// LOCALSTORAGE
 // ==========================================
 const STORAGE_KEY = 'byod_quizzes';
 
@@ -182,7 +184,7 @@ function loadSavedQuizzes() {
             item.innerHTML = `
                 <div style="flex-grow: 1;" onclick="startFromSaved(${index})">
                     <div class="saved-title">📝 ${quiz.title}</div>
-                    <div class="saved-meta">${quiz.data.length} domande nel paniere</div>
+                    <div class="saved-meta">${quiz.data.length} domande in archivio</div>
                 </div>
                 <button class="del-btn" onclick="deleteQuiz(${index})" title="Elimina">✕</button>
             `;
@@ -197,13 +199,9 @@ function saveQuizToStorage(title, parsedArray) {
     let savedData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     let finalTitle = title !== "" ? title : `Quiz del ${new Date().toLocaleDateString()}`;
     
-    // Evita duplicati col nome: se esiste aggiorna, altrimenti push
     const existingIdx = savedData.findIndex(q => q.title === finalTitle);
-    if(existingIdx >= 0) {
-        savedData[existingIdx].data = parsedArray;
-    } else {
-        savedData.push({ title: finalTitle, data: parsedArray });
-    }
+    if(existingIdx >= 0) savedData[existingIdx].data = parsedArray;
+    else savedData.push({ title: finalTitle, data: parsedArray });
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
 }
@@ -220,50 +218,75 @@ function deleteQuiz(index) {
 function startFromSaved(index) {
     let savedData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     let selectedQuiz = savedData[index];
-    
     document.getElementById('display-title').innerText = selectedQuiz.title;
     prepareEngineAndStart(selectedQuiz.data);
 }
 
-// Inizializza la view al caricamento della pagina
 loadSavedQuizzes();
 
 // ==========================================
-// FASE 1: PARSING DEI NUOVI DATI
+// PARSER ROBUSTO (ANTI-ERRORE JSON)
 // ==========================================
 document.getElementById('btn-build').onclick = () => {
-    const errorBox = document.getElementById('error-box');
-    errorBox.classList.add('hidden');
+    document.getElementById('error-box').classList.add('hidden');
+    document.getElementById('success-box').classList.add('hidden');
     
     let title = document.getElementById('quiz-title').value.trim();
-    const rawData = document.getElementById('json-data').value.trim();
+    let rawData = document.getElementById('json-data').value.trim();
     
     if(!rawData) {
-        showError("Per favore, incolla la base dati nell'apposito campo.");
+        showError("Per favore, incolla il testo o il JSON nell'apposito campo.");
         return;
     }
 
+    let parsedArray = [];
+
+    // PULIZIA PREVENTIVA: Rimuove blocchi markdown e sostituisce virgolette intelligenti
+    let cleanData = rawData.replace(/^```(json)?\s*/i, '').replace(/```$/i, '').trim();
+    cleanData = cleanData.replace(/[“”]/g, '"'); 
+    cleanData = cleanData.replace(/,\s*]/g, ']'); // Sistema le virgole finali appese
+
     try {
-        let cleanData = rawData.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
-        const parsedArray = JSON.parse(cleanData);
-        
-        if(!Array.isArray(parsedArray) || parsedArray.length === 0) {
-            throw new Error("I dati devono essere un array contenente almeno una domanda.");
-        }
-
-        // Salva nel LocalStorage
-        saveQuizToStorage(title, parsedArray);
-        
-        // Imposta Titolo
-        if(title !== "") document.getElementById('display-title').innerText = title;
-        else document.getElementById('display-title').innerText = "Simulatore Esame";
-
-        // Avvia il motore
-        prepareEngineAndStart(parsedArray);
-
+        // TENTATIVO 1: Parsing JSON nativo
+        parsedArray = JSON.parse(cleanData);
     } catch (e) {
-        showError("Formato dati non valido. Assicurati che sia un JSON corretto. Dettaglio: " + e.message);
+        // TENTATIVO 2: Recupero di emergenza (Regex su righe singole)
+        console.warn("JSON non valido. Attivazione parser di emergenza...");
+        
+        parsedArray = cleanData.split('\n')
+            .map(line => line.trim().replace(/^["\[\]\s,]+/, '').replace(/["\[\]\s,]+$/, '')) // Pulisce i bordi di ogni riga
+            .filter(line => line.includes('|')); // Prende solo le righe che contengono il pipe
     }
+
+    if(!Array.isArray(parsedArray) || parsedArray.length === 0) {
+        showError("Non sono riuscito a trovare domande valide. Assicurati che domanda e risposta siano separate dal simbolo '|'.");
+        return;
+    }
+
+    // Costruisce e valida il DB interno
+    db = parsedArray.map(line => {
+        if(typeof line !== 'string' || !line.includes('|')) return null;
+        let parts = line.split('|');
+        return { q: parts[0].trim(), c: parts[1].trim() };
+    }).filter(item => item !== null);
+
+    if(db.length === 0) {
+        showError("Errore nell'estrazione: nessuna coppia Domanda|Risposta individuata.");
+        return;
+    }
+
+    // Se arriviamo qui, il parsing è un successo!
+    saveQuizToStorage(title, parsedArray);
+    
+    if(title !== "") document.getElementById('display-title').innerText = title;
+    else document.getElementById('display-title').innerText = "Simulatore Esame";
+
+    document.getElementById('success-box').innerText = `Successo! Sono state caricate ${db.length} domande.`;
+    document.getElementById('success-box').classList.remove('hidden');
+
+    setTimeout(() => {
+        prepareEngineAndStart(parsedArray);
+    }, 1000);
 };
 
 function showError(msg) {
@@ -273,35 +296,20 @@ function showError(msg) {
 }
 
 // ==========================================
-// FASE 2: MOTORE DEL QUIZ (ANTI-TRUCCO)
+// MOTORE QUIZ E DISTRATTORI INTELLIGENTI
 // ==========================================
-function prepareEngineAndStart(parsedArray) {
-    // 1. Costruisce il DB
-    db = parsedArray.map((line, index) => {
-        if(typeof line !== 'string' || !line.includes('|')) {
-            alert(`Attenzione: la riga ${index + 1} non è formattata correttamente (manca il carattere '|'). Verrà ignorata.`);
-            return null;
-        }
-        let parts = line.split('|');
-        return { q: parts[0].trim(), c: parts[1].trim() };
-    }).filter(item => item !== null);
-
+function prepareEngineAndStart() {
     allCorrectAnswers = db.map(item => item.c);
 
-    // Nascondi Setup, Mostra Quiz
     document.getElementById('setup-view').classList.add('hidden');
     document.getElementById('quiz-view').classList.remove('hidden');
 
     let limit = Math.min(maxQuestionsForQuiz, db.length);
-
-    // 2. Estrae N domande casuali
     let selectedQuestions = [...db].sort(() => 0.5 - Math.random()).slice(0, limit);
     
-    // 3. Genera i distrattori basati sulla lunghezza
     activeQuiz = selectedQuestions.map(item => {
         let correctAns = item.c;
         
-        // Cerca distrattori di lunghezza simile
         let similarLengthAnswers = allCorrectAnswers.filter(a => 
             a !== correctAns && Math.abs(a.length - correctAns.length) < 35
         );
@@ -314,17 +322,10 @@ function prepareEngineAndStart(parsedArray) {
         let distractors = similarLengthAnswers.sort(() => 0.5 - Math.random()).slice(0, 3);
         let options = [correctAns, ...distractors].sort(() => 0.5 - Math.random());
         
-        return {
-            q: item.q,
-            a: options,
-            correctIdx: options.indexOf(correctAns),
-            correctText: correctAns
-        };
+        return { q: item.q, a: options, correctIdx: options.indexOf(correctAns), correctText: correctAns };
     });
 
-    // Reset Variabili e avvia
     currentIdx = 0; correctHits = 0; wrongHits = 0; answersLog = [];
-    document.getElementById('pos').innerText = `1 / ${limit}`;
     renderQuestion();
 }
 
@@ -355,11 +356,8 @@ function renderQuestion() {
 document.getElementById('next-btn').onclick = () => {
     let limit = activeQuiz.length;
 
-    if(answersLog[currentIdx] === activeQuiz[currentIdx].correctIdx) {
-        correctHits++; 
-    } else {
-        wrongHits++;
-    }
+    if(answersLog[currentIdx] === activeQuiz[currentIdx].correctIdx) { correctHits++; } 
+    else { wrongHits++; }
     
     document.getElementById('r-val').innerText = correctHits;
     document.getElementById('w-val').innerText = wrongHits;
@@ -375,7 +373,7 @@ document.getElementById('next-btn').onclick = () => {
 };
 
 // ==========================================
-// FASE 3: RISULTATI E REVISIONE
+// RISULTATI E REVISIONE
 // ==========================================
 function showResults() {
     let limit = activeQuiz.length;
@@ -405,9 +403,7 @@ document.getElementById('rev-btn').onclick = () => {
         let ansHtml = `<strong>${i+1}. ${q.q}</strong>`;
         ansHtml += `<div class="rev-ans" style="border-left: 4px solid ${ok ? 'var(--correct)':'var(--wrong)'}">`;
         ansHtml += `<div style="color:${ok ? 'var(--correct)':'var(--wrong)'}; margin-bottom:5px;">Scelta: ${q.a[answersLog[i]]}</div>`;
-        if(!ok) {
-            ansHtml += `<div style="color:var(--correct)">Corretta: ${q.correctText}</div>`;
-        }
+        if(!ok) { ansHtml += `<div style="color:var(--correct)">Corretta: ${q.correctText}</div>`; }
         ansHtml += `</div>`;
         
         d.innerHTML = ansHtml;
@@ -417,4 +413,5 @@ document.getElementById('rev-btn').onclick = () => {
 </script>
 </body>
 </html>
+
 
