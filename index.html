@@ -18,12 +18,13 @@
         
         /* Setup UI Elements */
         h1, h2, h3 { margin-top: 0; }
-        .prompt-box { background: #000; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #a8c7fa; white-space: pre-wrap; margin-bottom: 20px; max-height: 150px; overflow-y: auto; }
+        .step-title { color: var(--accent); font-size: 1.1rem; margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .prompt-box { background: #000; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #a8c7fa; white-space: pre-wrap; margin-bottom: 15px; max-height: 250px; overflow-y: auto; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #9aa0a6; font-size: 0.9rem; }
         input[type="text"], textarea { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); color: var(--txt); border-radius: 8px; font-family: inherit; font-size: 1rem; box-sizing: border-box; }
         input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        textarea { resize: vertical; min-height: 120px; }
+        textarea { resize: vertical; min-height: 150px; }
         .error-msg { background: rgba(234,67,53,0.1); color: var(--wrong); padding: 12px; border-radius: 8px; border: 1px solid rgba(234,67,53,0.3); margin-bottom: 20px; font-size: 0.9rem; }
         .success-msg { background: rgba(52,168,83,0.1); color: var(--correct); padding: 12px; border-radius: 8px; border: 1px solid rgba(52,168,83,0.3); margin-bottom: 20px; font-size: 0.9rem; }
 
@@ -68,49 +69,53 @@
 
 <div id="container">
     
-    <!-- SCHERMATA 1: SETUP -->
     <div id="setup-view" class="card">
         <h1>Configura il Quiz</h1>
         
-        <!-- SEZIONE QUIZ SALVATI -->
         <div id="saved-section" class="hidden" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #333;">
             <h3 style="color: var(--correct)">I tuoi Quiz Salvati</h3>
             <div id="saved-list"></div>
         </div>
 
-        <p style="color: #9aa0a6; font-size: 0.95rem;">Copia il prompt qui sotto, incollalo in ChatGPT, Claude o Gemini insieme ai tuoi PDF e ottieni la base dati.</p>
+        <p style="color: #9aa0a6; font-size: 0.95rem;">Usa i prompt qui sotto in ChatGPT, Claude o Gemini insieme ai tuoi PDF per estrarre la base dati senza perdere alcuna informazione.</p>
         
-        <div class="prompt-box" id="prompt-text">Agisci come un esperto analista dati e instructional designer. Il tuo compito è analizzare i documenti di studio allegati a questo prompt ed estrarre tutte le informazioni per strutturare la base dati di un simulatore d'esame.
+        <div class="step-title">Step 1: Prompt Iniziale</div>
+        <p style="font-size: 0.85rem; margin-top: 0;">Copia questo e incollalo assieme ai tuoi file PDF.</p>
+        <div class="prompt-box" id="prompt-text-1">Agisci come un esperto analista dati. Devi estrarre TUTTE le domande e le relative risposte corrette dai documenti allegati, per creare un database.
+Poiché i file sono molto lunghi e per evitare che il tuo output si interrompa a metà perdendo dati, lavoreremo rigorosamente a blocchi di 50 domande.
 
-REGOLE DI ESTRAZIONE E PULIZIA:
-1. Estrazione totale: Estrai TUTTE le domande presenti nei file. Non tralasciarne nessuna.
-2. Solo la verità: Per ogni domanda, estrai ESCLUSIVAMENTE la risposta corretta. Scarta le opzioni errate.
-3. Pulizia del testo: Rimuovi numeri progressivi (es. "1."), lettere (es. "A)"), link, numeri di pagina o intestazioni.
-4. Coerenza logica: Assicurati che domanda e risposta abbiano senso compiuto.
+REGOLE DI ESTRAZIONE:
+1. Estrai SOLO la domanda e la risposta CORRETTA. Ignora le opzioni errate.
+2. Pulisci il testo: rimuovi numeri progressivi (es. "1."), lettere (es. "A)"), link, numeri di pagina e intestazioni.
+3. Formatta ogni riga ESATTAMENTE così: Domanda separata dalla risposta corretta dal simbolo pipe "|".
 
-FORMATO DI OUTPUT (TASSATIVO):
-Restituisci UNICAMENTE un array JSON di stringhe.
-Formato stringa: Domanda separata dalla risposta esatta dal carattere pipe "|".
+ISTRUZIONI OPERATIVE:
+Per questo primo prompt, estrai ESCLUSIVAMENTE le prime 50 domande del documento.
+Restituisci l'output all'interno di un blocco di codice markdown.
+Quando hai terminato queste 50, fermati e scrivi fuori dal blocco di codice: "BLOCCO COMPLETATO. Scrivi CONTINUA per le prossime 50 domande".
 
-ESEMPIO DI OUTPUT:
-[
-  "Il costruttivismo è: | una teoria della conoscenza secondo la quale...",
-  "Per il costruttivismo la conoscenza non è: | pura ripetizione mnemonica"
-]
+ESEMPIO:
+```text
+Il costruttivismo è: | una teoria della conoscenza secondo la quale...
+Per il costruttivismo la conoscenza non è: | pura ripetizione mnemonica
+```</div>
 
-IMPORTANTE: Nessuna intro, nessuna conclusione, nessun tag markdown (no ```json). Stampa solo l'array che inizia con [ e finisce con ].</div>
+        <div class="step-title">Step 2: Prompt di Continuazione</div>
+        <p style="font-size: 0.85rem; margin-top: 0;">Quando l'IA si ferma, usa questo comando per farle generare le successive 50 domande, finché il file non è finito.</p>
+        <div class="prompt-box" id="prompt-text-2">CONTINUA. Estrai le successive 50 domande ripartendo esattamente da dove ti sei fermato. Usa le stesse identiche regole e lo stesso formato testuale.</div>
         
+        <div class="step-title">Step 3: Incolla e Crea</div>
         <div id="error-box" class="error-msg hidden"></div>
         <div id="success-box" class="success-msg hidden"></div>
 
         <div class="form-group">
             <label for="quiz-title">Titolo del Quiz (Serve per salvarlo nel browser)</label>
-            <input type="text" id="quiz-title" placeholder="Es. Esame di Didattica">
+            <input type="text" id="quiz-title" placeholder="Es. Esame di Didattica (Completo)">
         </div>
 
         <div class="form-group">
-            <label for="json-data">Base Dati (Incolla qui l'output dell'IA)</label>
-            <textarea id="json-data" placeholder='Incolla qui il codice o la lista di domande. Il sistema è intelligente: basta che domanda e risposta siano separate da un |'></textarea>
+            <label for="json-data">Base Dati (Incolla qui tutti i blocchi generati dall'IA)</label>
+            <textarea id="json-data" placeholder='Incolla qui tutti i risultati generati dall&apos;IA uno sotto l&apos;altro.&#10;&#10;Non preoccuparti di "pulire" il testo o togliere le frasi in mezzo come "BLOCCO COMPLETATO": il nostro sistema è intelligente, ignorerà lo sporco e prenderà solo le righe valide contenenti il simbolo "|"!'></textarea>
         </div>
 
         <div style="text-align: right;">
@@ -118,7 +123,6 @@ IMPORTANTE: Nessuna intro, nessuna conclusione, nessun tag markdown (no ```json)
         </div>
     </div>
 
-    <!-- SCHERMATA 2: QUIZ INTERATTIVO -->
     <div id="quiz-view" class="hidden">
         <div class="header">
             <div class="quiz-title-display" id="display-title">Simulatore Esame</div>
@@ -138,7 +142,6 @@ IMPORTANTE: Nessuna intro, nessuna conclusione, nessun tag markdown (no ```json)
         <div class="footer"><button id="next-btn" class="btn" disabled>Avanti</button></div>
     </div>
 
-    <!-- SCHERMATA 3: RISULTATI E REVISIONE -->
     <div id="res-view" class="hidden">
         <div class="card res-card">
             <h2>Simulazione Terminata</h2>
@@ -225,7 +228,7 @@ function startFromSaved(index) {
 loadSavedQuizzes();
 
 // ==========================================
-// PARSER ROBUSTO (ANTI-ERRORE JSON)
+// PARSER ROBUSTO (ANTI-ERRORE)
 // ==========================================
 document.getElementById('btn-build').onclick = () => {
     document.getElementById('error-box').classList.add('hidden');
@@ -235,53 +238,48 @@ document.getElementById('btn-build').onclick = () => {
     let rawData = document.getElementById('json-data').value.trim();
     
     if(!rawData) {
-        showError("Per favore, incolla il testo o il JSON nell'apposito campo.");
+        showError("Per favore, incolla il testo estratto nell'apposito campo.");
         return;
     }
 
     let parsedArray = [];
 
-    // PULIZIA PREVENTIVA: Rimuove blocchi markdown e sostituisce virgolette intelligenti
-    let cleanData = rawData.replace(/^```(json)?\s*/i, '').replace(/```$/i, '').trim();
+    // PULIZIA PREVENTIVA: Rimuove i blocchi markdown che l'IA potrebbe aver lasciato
+    let cleanData = rawData.replace(/```[a-z]*\s*/ig, '').replace(/```/g, '').trim();
     cleanData = cleanData.replace(/[“”]/g, '"'); 
-    cleanData = cleanData.replace(/,\s*]/g, ']'); // Sistema le virgole finali appese
-
+    
     try {
-        // TENTATIVO 1: Parsing JSON nativo
-        parsedArray = JSON.parse(cleanData);
-    } catch (e) {
-        // TENTATIVO 2: Recupero di emergenza (Regex su righe singole)
-        console.warn("JSON non valido. Attivazione parser di emergenza...");
-        
+        // Usa il Parser a Righe per ignorare frasi sporche (es. "BLOCCO COMPLETATO")
         parsedArray = cleanData.split('\n')
             .map(line => line.trim().replace(/^["\[\]\s,]+/, '').replace(/["\[\]\s,]+$/, '')) // Pulisce i bordi di ogni riga
-            .filter(line => line.includes('|')); // Prende solo le righe che contengono il pipe
-    }
-
-    if(!Array.isArray(parsedArray) || parsedArray.length === 0) {
+            .filter(line => line.includes('|')); // Prende SOLO le righe che contengono il pipe
+            
+        if(parsedArray.length === 0) {
+            throw new Error("Nessuna riga valida trovata.");
+        }
+    } catch (e) {
         showError("Non sono riuscito a trovare domande valide. Assicurati che domanda e risposta siano separate dal simbolo '|'.");
         return;
     }
 
     // Costruisce e valida il DB interno
     db = parsedArray.map(line => {
-        if(typeof line !== 'string' || !line.includes('|')) return null;
         let parts = line.split('|');
         return { q: parts[0].trim(), c: parts[1].trim() };
-    }).filter(item => item !== null);
+    }).filter(item => item.q.length > 0 && item.c.length > 0);
 
     if(db.length === 0) {
         showError("Errore nell'estrazione: nessuna coppia Domanda|Risposta individuata.");
         return;
     }
 
-    // Se arriviamo qui, il parsing è un successo!
+    // Salvataggio ed esecuzione
     saveQuizToStorage(title, parsedArray);
     
     if(title !== "") document.getElementById('display-title').innerText = title;
     else document.getElementById('display-title').innerText = "Simulatore Esame";
 
-    document.getElementById('success-box').innerText = `Successo! Sono state caricate ${db.length} domande.`;
+    document.getElementById('success-box').innerText = `Successo! Sono state caricate ${db.length} domande nel paniere.`;
     document.getElementById('success-box').classList.remove('hidden');
 
     setTimeout(() => {
@@ -413,5 +411,3 @@ document.getElementById('rev-btn').onclick = () => {
 </script>
 </body>
 </html>
-
-
