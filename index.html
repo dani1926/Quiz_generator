@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulatore Esame Didattica - Versione Finale</title>
+    <title>Simulatore Esame Didattica - Paniere Completo</title>
     <style>
         :root {
             --bg: #131314; --card: #1e1f20; --txt: #e3e3e3; 
@@ -20,7 +20,7 @@
         .b-right { background: rgba(52,168,83,0.1); color: var(--correct); border-color: rgba(52,168,83,0.3); }
         .q-text { font-size: 1.15rem; font-weight: 500; line-height: 1.4; margin-bottom: 25px; }
         .opt-list { display: flex; flex-direction: column; gap: 12px; }
-        .opt { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: 0.2s; display: flex; gap: 12px; }
+        .opt { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: 0.2s; display: flex; gap: 12px; font-size: 0.95rem; line-height: 1.4;}
         .opt:hover { background: #2d2f31; }
         .opt.active { border-color: var(--accent); background: rgba(168,199,250,0.05); }
         .letter { color: #9aa0a6; font-weight: bold; min-width: 25px; }
@@ -30,6 +30,7 @@
         .hidden { display: none !important; }
         .res-card { text-align: center; background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid var(--border); }
         .rev-item { padding: 20px 0; border-bottom: 1px solid #333; }
+        .rev-ans { margin-top: 8px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.03); font-size: 0.95rem;}
     </style>
 </head>
 <body>
@@ -47,7 +48,7 @@
             </div>
         </div>
         <div class="q-box">
-            <div class="q-text" id="q-txt">Inizializzazione...</div>
+            <div class="q-text" id="q-txt">Inizializzazione database (300+ domande)...</div>
             <div class="opt-list" id="opt-list"></div>
         </div>
         <div class="footer"><button id="next-btn" class="btn" disabled>Avanti</button></div>
@@ -55,12 +56,12 @@
 
     <div id="res-ui" class="hidden">
         <div class="res-card">
-            <h2>Analisi Performance</h2>
+            <h2>Simulazione Terminata</h2>
             <div style="font-size: 3.5rem; font-weight: 800; color: var(--accent); margin: 15px 0;" id="f-score">0/30</div>
             <p id="f-msg"></p>
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:25px;">
-                <button class="btn" onclick="location.reload()">Inizia Nuova Sessione</button>
-                <button id="rev-btn" style="background:none; color:var(--accent); border:1px solid var(--accent); padding:10px; border-radius:20px; cursor:pointer;">Esamina Risposte</button>
+                <button class="btn" onclick="location.reload()">Genera Nuova Simulazione</button>
+                <button id="rev-btn" style="background:none; color:var(--accent); border:1px solid var(--accent); padding:10px; border-radius:20px; cursor:pointer;">Analizza i tuoi errori</button>
             </div>
         </div>
         <div id="rev-ui" class="hidden" style="margin-top:40px;"><h3>Dettaglio Risposte</h3></div>
@@ -68,177 +69,323 @@
 </div>
 
 <script>
-// Database potenziato: Distrattori bilanciati e linguaggi accademici simili
-const masterPool = [
-    {
-        q: "Qual è la definizione corretta di costruttivismo in ambito didattico?",
-        a: [
-            "Una teoria della conoscenza secondo la quale il sapere è il prodotto delle azioni di un soggetto attivo in funzione adattativa con la realtà.",
-            "Un paradigma psicologico che intende la conoscenza come il risultato di una pura ripetizione mnemonica di contenuti predefiniti.",
-            "Un approccio pedagogico che considera l'ambiente di apprendimento come uno spazio d'azione non strutturato gestito dall'alunno.",
-            "Una metodologia d'insegnamento centrata sulla trasmissione verticale del sapere dal docente a un alunno considerato passivo."
-        ],
-        c: 0
-    },
-    {
-        q: "Secondo le teorie di D. Schön, un professionista che adotta una 'razionalità tecnica' è:",
-        a: [
-            "Un operatore capace di sviluppare nuove ipotesi interpretative in situazioni di pratica uniche, incerte e spesso conflittuali.",
-            "Un soggetto che riflette nel mezzo dell'azione senza interromperla, integrando costantemente teoria e prassi professionale.",
-            "Solamente un esecutore di procedure standard frutto dell'applicazione rigorosa di teorie e tecniche collaudate in precedenza.",
-            "Un educatore che dedica tempo adeguato a pensare a ritroso dopo l'azione per sedimentare i guadagni formativi ottenuti."
-        ],
-        c: 2
-    },
-    {
-        q: "Nella progettazione educativa, l'approccio concertativo/partecipativo si basa principalmente sulla tappa di:",
-        a: [
-            "Ideazione, intesa come la definizione tecnica e unilaterale del problema da parte del progettista esperto.",
-            "Attivazione, finalizzata alla ricerca di risorse e alla costruzione di un sistema di relazioni tra gli attori coinvolti.",
-            "Valutazione, orientata esclusivamente alla misurazione quantitativa degli esiti finali rispetto agli obiettivi prefissati.",
-            "Condivisione, intesa come l'accettazione passiva da parte dei beneficiari di un progetto già strutturato integralmente."
-        ],
-        c: 1
-    },
-    {
-        q: "Cosa si intende per 'scaffolding' nella prospettiva della zona di sviluppo prossimale?",
-        a: [
-            "L'impalcatura di sostegno fornita dall'adulto per permettere all'alunno di operare in uno spazio tra capacità attuale e potenziale.",
-            "Il processo di valutazione sommativa volto a certificare il raggiungimento di competenze già consolidate in modo autonomo.",
-            "La tecnica di insegnamento frontale che mira a trasmettere concetti astratti attraverso la ripetizione costante di esempi pratici.",
-            "L'organizzazione logica e gerarchica delle conoscenze all'interno di un curricolo sinottico privo di flessibilità operativa."
-        ],
-        c: 0
-    },
-    {
-        q: "La 'competenza riflessiva', secondo lo scenario del lifelong learning contemporaneo, è considerata:",
-        a: [
-            "Un atto cognitivo isolato finalizzato esclusivamente alla risoluzione di problemi tecnici di natura scolastica.",
-            "Una competenza trasversale che taglia le Life Skills riconosciute dall'OMS e supporta la rettificazione delle idee.",
-            "L'abilità di memorizzare e riprodurre fedelmente schemi comportamentali appresi durante la formazione primaria.",
-            "Una dote innata del docente che non può essere potenziata attraverso la formazione continua o la ricerca empirica."
-        ],
-        c: 1
-    },
-    {
-        q: "L'inclusione scolastica, nella prospettiva della migliore qualità della vita, si realizza attraverso:",
-        a: [
-            "Strategie finalizzate allo sviluppo delle potenzialità nel rispetto dell'autodeterminazione e dell'accomodamento ragionevole.",
-            "L'inserimento fisico dell'alunno con disabilità in classi comuni senza la necessità di modificare i materiali didattici standard.",
-            "Una programmazione differenziata che esclude il confronto tra l'alunno con bisogni speciali e il resto del gruppo classe.",
-            "La delega esclusiva dei processi di apprendimento all'insegnante di sostegno per garantire una gestione separata dei BES."
-        ],
-        c: 0
-    },
-    {
-        q: "Cosa differenzia l'esperienza come 'Erlebnis' dall'esperienza come 'Erfahrung'?",
-        a: [
-            "L'Erlebnis è l'esperienza vissuta e cumulata negli anni, mentre l'Erfahrung è l'emozione legata al solo stimolo del presente.",
-            "L'Erfahrung indica un tipo di conoscenza teorica, mentre l'Erlebnis riguarda esclusivamente la sperimentazione attiva sul campo.",
-            "L'Erfahrung è l'esperienza vissuta cumulata nel tempo, l'Erlebnis è un tipo di esperienza che si consuma sugli stimoli del presente.",
-            "Non vi è alcuna differenza, poiché entrambi i termini tedeschi indicano il coinvolgimento diretto in un evento o fenomeno."
-        ],
-        c: 2
-    },
-    {
-        q: "Nella didattica laboratoriale, l'insegnante assume principalmente il ruolo di:",
-        a: [
-            "Unico trasmettitore di saperi accademici attraverso una lezione frontale centrata sull'esposizione di concetti e teorie.",
-            "Progettista dell'apprendimento che facilita la competenza attraverso la pratica, la riflessione e l'interiorizzazione.",
-            "Osservatore passivo che non interviene mai durante le attività per non interferire con la spontaneità degli allievi.",
-            "Valutatore sommativo che interviene solo al termine del processo per sanzionare gli errori commessi dagli studenti."
-        ],
-        c: 1
-    },
-    {
-        q: "L'Universal Design for Learning (UDL) propone di progettare i curricula offrendo:",
-        a: [
-            "Un unico mezzo di rappresentazione e azione per garantire l'uguaglianza formale tra tutti gli studenti della classe.",
-            "Molteplici mezzi di rappresentazione, azione, espressione e coinvolgimento per rispondere alle diverse esigenze degli studenti.",
-            "Prove di verifica semplificate solo per gli alunni con disabilità certificata, mantenendo standard elevati per gli altri.",
-            "Contenuti digitali identici per tutti i discenti, indipendentemente dalle loro caratteristiche sensoriali o cognitive."
-        ],
-        c: 1
-    },
-    {
-        q: "Secondo Gardner, l'intelligenza dovrebbe essere vista come:",
-        a: [
-            "Una singola entità statica misurabile attraverso test standardizzati volti a definire il quoziente intellettivo (QI).",
-            "Un insieme pluralistico di facoltà mentali (almeno 7 o 9) che si manifestano in ambiti e contesti culturali differenti.",
-            "La capacità di adattarsi passivamente all'ambiente circostante senza la necessità di utilizzare linguaggi simbolici.",
-            "Un processo mentale finalizzato esclusivamente alla produzione di risposte corrette in ambito logico-matematico."
-        ],
-        c: 1
-    },
-    {
-        q: "Cosa si intende per 'interdipendenza funzionale' all'interno di un gruppo classe?",
-        a: [
-            "La dipendenza assoluta di ogni studente dalle decisioni prese dal docente durante lo svolgimento delle attività.",
-            "L'azione organizzata dei membri del gruppo che collaborano per il raggiungimento di un obiettivo comune condiviso.",
-            "La suddivisione dei compiti in modo che ogni studente possa lavorare ignorando il contributo dei propri compagni.",
-            "Un sistema di valutazione in cui il voto finale di ogni studente è indipendente dalla performance collettiva del gruppo."
-        ],
-        c: 1
-    },
-    {
-        q: "Il 'Circle Time' è una metodologia didattica volta a:",
-        a: [
-            "Monitorare il tempo di attenzione dei singoli alunni durante le spiegazioni frontali di concetti astratti.",
-            "Facilitare la comunicazione e la conoscenza reciproca attraverso un momento strutturato di vita scolastica.",
-            "Garantire l'ordine alfabetico durante gli spostamenti degli studenti tra l'aula e i laboratori didattici.",
-            "Isolare gli alunni con comportamenti problematici per permettere al resto della classe di lavorare in silenzio."
-        ],
-        c: 1
-    },
-    {
-        q: "Le tecnologie 'inclusive', rispetto alle tecnologie assistive tradizionali:",
-        a: [
-            "Sono progettate esclusivamente per aumentare le capacità funzionali delle persone con disabilità certificate.",
-            "Possono essere utili per tutti gli studenti, non solo per quelli con disabilità, favorendo la personalizzazione.",
-            "Richiedono l'uso obbligatorio di hardware costosi e programmi non accessibili tramite i comuni dispositivi mobili.",
-            "Sostituiscono completamente il ruolo del docente nell'interazione sociale all'interno dell'ambiente di apprendimento."
-        ],
-        c: 1
-    },
-    {
-        q: "La 'profezia che si autoavvera' (Effetto Pigmalione) suggerisce che:",
-        a: [
-            "I risultati degli studenti non sono influenzati dalle aspettative o dai pregiudizi espressi dai loro insegnanti.",
-            "Le aspettative positive o negative del docente possono influenzare concretamente le prestazioni degli alunni.",
-            "Il successo formativo dipende esclusivamente dalle condizioni socio-economiche di partenza della famiglia.",
-            "La valutazione deve essere sempre oggettiva e priva di qualsiasi coinvolgimento emotivo tra docente e allievo."
-        ],
-        c: 1
-    },
-    {
-        q: "Nella didattica dell'errore, lo sbaglio viene considerato:",
-        a: [
-            "Un fallimento del processo educativo che deve essere sanzionato tempestivamente per evitare ripetizioni.",
-            "Una risorsa e un'opportunità di apprendimento che favorisce lo sviluppo della capacità di autocorrezione.",
-            "Un evento casuale che non fornisce alcuna indicazione utile sui processi cognitivi messi in atto dall'alunno.",
-            "Un segnale di pigrizia che richiede l'assegnazione di compiti supplementari per consolidare le conoscenze."
-        ],
-        c: 1
-    }
-    // Aggiungi qui altre domande dai PDF seguendo questo stile bilanciato
+// Database compatto: tutte le domande dei 3 PDF separate dal carattere "|"
+const rawData = [
+    "Il costruttivismo è:|una teoria della conoscenza secondo la quale la conoscenza e il sapere sono il prodotto delle azioni di un soggetto attivo in funzione adattativa con la realtà",
+    "Per il costruttivismo la conoscenza non è:|pura ripetizione mnemonica",
+    "L'ambiente di apprendimento costruttivista:|è uno spazio d'azione predisposto intenzionalmente dall'insegnante",
+    "Uno dei seguenti elementi non rientra nella costruzione di un ambiente di apprendimento costruttivista:|dirigente scolastico",
+    "Una delle seguenti non è una fase per strutturare un percorso di apprendimento costruttivista:|far partire l'azione didattica da una lezione frontale",
+    "In una logica costruttivista il docente:|progetta l'ambiente di apprendimento affinché l'alunno possa agire da solo, ma mantiene con lui un legame di fiducia e supporto",
+    "Un docente prima di entrare in classe deve:|progettare in modo preciso, ma flessibile l'attività",
+    "Un docente durante lo svolgimento delle attività didattiche:|osserva il lavoro della classe e al bisogno interviene, ma senza mai dare immediate soluzioni",
+    "Un docente alla fine delle attività didattiche:|analizza i dati raccolti attraverso l'osservazione",
+    "Un docente può agire almeno su tre poli fondamentali durante la sua progettazione, uno dei seguenti non è un polo fondamentale:|le famiglie",
+    "Chi si pone problemi di progettazione, si pone davanti alla realizzazione di:|mondi possibili",
+    "La logica progettuale in educazione «funziona» se si condividono due presupposti:|l'educazione è un'esperienza, pertanto, la persona la si deve considerare nella sua possibilità",
+    "Una competenza dell'educatore dovrebbe essere:|l'intenzionalità pedagogica",
+    "Una delle seguenti non è una tappa della progettazione:|condivisione",
+    "Su quale tappa si basa maggiormente l'approccio sinottico razionale:|progettazione",
+    "Su quale tappa si basa maggiormente l'approccio concertativo/partecipativo:|attivazione",
+    "Secondo l'approccio sinottico razionale:|la definizione del problema viene fatta da colui che progetta a seguito di un'analisi di tipo tecnico",
+    "Un progetto formativo deve rispondere a due fondamentali requisiti:|coerenza e logicità",
+    "Quali tra i seguenti approcci alla progettazione è il meno strutturato:|euristico",
+    "Quali tra i seguenti approcci alla progettazione non contempla nel suo interno la co-progettazione:|sinottico razionale",
+    "Nello scenario del lifelong learning contemporaneo, si assiste allo scivolamento della riflessione da:|atto cognitivo a competenza trasversale",
+    "Soltanto una delle seguenti affermazioni è corretta:|la competenza riflessiva taglia trasversalmente le Life Skills riconosciute dall'OMS",
+    "Per quale autore la riflessione non è intesa in termini di 'ritorno', ma come vigilanza circa il processo di rettificazione delle idee:|J. Dewey",
+    "Per J. Dewey il doppio movimento della riflessione si sostanzia come un processo di ricerca che può procedere in due direzioni:|in termini deduttivi o induttivi",
+    "Per quale dei seguenti autori la riflessione è uno strumento di emancipazione sociale:|P. Freire",
+    "Chi tra i seguenti autori parla di 'epistemologia della pratica':|D. Schön",
+    "Rifacendoci alle teorie di D. Schön cosa intendiamo per 'Abilità artistica':|quell'abilità a sviluppare nuove ipotesi interpretative e azioni che i professionisti hanno in situazioni di pratica uniche, incerte e conflittuali",
+    "Rifacendoci alle teorie di D. Schön un professionista che adotta una 'razionalità tecnica':|è solamente un esecutore di procedure standard frutto dell'applicazione di teorie e tecniche collaudate",
+    "Rifacendoci alle teorie di D. Schön cosa intendiamo per 'riflessione sull'azione':|pensare a ritroso all'azione che abbiamo fatto affinché sia stato raggiunto quel risultato inaspettato",
+    "Rifacendoci alle teorie di D. Schön cosa intendiamo per 'riflessione nel corso dell'azione':|riflettere nel mezzo dell'azione senza interromperla",
+    "Per svolgere con competenza e professionalità il ruolo dell'educatore è richiesta:|una continua e costante riflessione sulle pratiche",
+    "Claude Lévi-Strauss utilizza due metafore per simboleggiare le competenze dell'insegnante:|il bricoleur e lo scienziato",
+    "Un insegnante nella sua pratica professionale:|attinge ad un patrimonio passato che ha attorno a sé, ma non perde di vista aspetti innovativi che guardano al futuro",
+    "Qual è una esigenza che spinge le istituzioni scolastiche ad utilizzare un metodo:|per mantenere un alto livello di iscrizioni",
+    "Qual è una esigenza che spinge l'insegnante ad utilizzare un metodo:|per una volontà professionale consapevole e caratterizzante",
+    "Qual è una esigenza che spinge le famiglie ad utilizzare un metodo:|per esigenze di una maggiore riconoscibilità intesa come una garanzia di qualità della formazione",
+    "Uno dei seguenti non è un elemento specifico che emerge dalle definizioni del concetto di metodo:|la causalità dei processi",
+    "Cosa intendiamo per metodo:|modo, criterio sistematico e funzionale di procedere in un'attività teorica o pratica, finalizzato al raggiungimento dell'esito prefissato",
+    "Secondo J. Dewey il metodo è un processo volto ad escludere:|frammentarietà e l'incoerenza",
+    "Una delle seguenti non è una competenza del formatore-trainer:|l'intenzionalità politica",
+    "Che cos'è l'esperienza:|una conoscenza di una cosa o di un evento, o di un fenomeno, ottenuta tramite il coinvolgimento in quella cosa o evento",
+    "Stando al concetto di incommutabilità dell'esperienza:|nessuno può fare un'esperienza al posto nostro",
+    "Le esperienze odierne soccombono ad una pluralità di:|stimoli e informazioni",
+    "Stando agli studi di W. Benjamin cosa intendiamo per Esperienza come Erfahrung:|l'idea di esperienza vissuta, cumulata negli anni tramite la conoscenza nel e del mondo",
+    "Stando agli studi di W. Benjamin cosa intendiamo per Esperienza come Erlebnis:|un tipo di esperienza che vive alla giornata, che si consuma sugli stimoli e sulle emozioni del solo presente",
+    "Una delle seguenti non è una caratteristica dell'esperienza odierna:|profonda",
+    "Stando ad una delle caratteristiche dell'esperienza odierna, quella della Frammentazione delle esperienze, le esperienze non rispondono al principio di:|continuità",
+    "Una delle seguenti non è una caratteristica dell'esperienza che educa:|storicità",
+    "Un'esperienza che educa dovrebbe avere 'tratti di realtà', ovvero:|toccare con mano l'oggetto d'apprendimento",
+    "Un'esperienza che educa dovrebbe attivare processi di problematizzazione, ovvero:|un atteggiamento critico in grado di interrogare la situazione e se stessi",
+    "Quale dimensione della persona non rientra nei processi di apprendimento dall'esperienza:|oggettiva",
+    "Secondo D. Kolb l'apprendimento esperienziale:|si realizza attraverso l'azione e la sperimentazione di situazioni, compiti, ruoli in cui il soggetto è attivo protagonista",
+    "Una delle seguenti non è una fase del ciclo dell'apprendimento esperienziale di D. Kolb:|pensiero retroattivo",
+    "Stando al ciclo dell'apprendimento esperienziale di D. Kolb, l'apprendimento esperienziale si colloca tra:|sperimentazione attiva e esperienza concreta",
+    "Stando al ciclo dell'apprendimento esperienziale di D. Kolb, in quale delle seguenti fasi è previsto un confronto critico:|concettualizzazione astratta",
+    "Stando al ciclo dell'apprendimento esperienziale di D. Kolb, in quale delle seguenti fasi è prevista una sperimentazione sul campo in situazioni differenti rispetto a quelle iniziali:|sperimentazione attiva",
+    "Nella formazione metaforica esperienziale le metafore:|devono essere sapientemente progettate e professionalmente gestite",
+    "La formazione metaforica esperienziale si configura come:|attività di gioco, di espressione sportiva o artistica",
+    "Le attività metaforico esperienziali sono pensate per:|per gruppi",
+    "Le attività metaforico esperienziali sono pensate per (analogia):|riprodurre le necessarie analogie con l'ambiente organizzativo richiamato dalla metafora medesima",
+    "L'Outdoor education ruota attorno due elementi principali:|l'ambiente naturale e le esigenze di spontaneità e di crescita dei bambini",
+    "L'affermazione: 'L'outdoor education non stabilisce quali attività o percorsi didattici debbano essere realizzati o quali obiettivi si debbano raggiungere...':|è corretta",
+    "I campi di esperienza offrono:|un insieme di oggetti, situazioni, immagini e linguaggi, riferiti ai sistemi simbolici della nostra cultura, capaci di evocare, di stimolare",
+    "Educare all'aperto si configura come una strategia educativa che fa leva:|sulla qualità delle esperienze",
+    "In un contesto naturale diverse dimensioni della persona coesistono, si integrano e si supportano:|corporea, cognitiva ed emotiva",
+    "Stando al modello di R. Trinchero, cosa è previsto nella fase di 'applicazione':|il gruppo o il singolo adatta la soluzione trovata per un problema analogo, ma con un grado di difficoltà superiore",
+    "Come possiamo definire l'outdoor training:|attività formative che vengono svolte all'aria aperta a fini didattici per sviluppare determinati comportamenti dei partecipanti sotto la conduzione di un trainer",
+    "Le attività di outdoor training portano ad uscire fuori:|dalla propria zona di comfort",
+    "Qual è la valenza inclusiva dell'outdoor training:|partire dalla Persona, dal fargli fare esperienza, dai suoi talenti, dalle sue intelligenze, dalla sua diversità, dalla sua unicità",
+    "Durante le attività outdoor training si lavora sul rischio:|percepito",
+    "La Costituzione italiana promuove:|una scuola aperta a tutti",
+    "Il processo di inserimento nelle scuole normali si verifica con:|legge 517/77",
+    "Nella L.104/1992, con il termine disabilità si intende:|una qualsiasi riduzione o perdita della capacità di compiere un'attività nei modi e nei tempi considerati normali per un essere umano",
+    "Con l'ICF, la disabilità è considerata:|il risultato di una relazione tra condizioni di salute dell'individuo e una serie di fattori personali e ambientali",
+    "La Direttiva Ministeriale sui BES del 27/12/2012 afferma:|ogni alunno, con continuità o per determinati periodi, può manifestare Bisogni Educativi Speciali",
+    "L'inclusione:|si realizza attraverso strategie educative e didattiche finalizzate allo sviluppo delle potenzialità di ciascuno nel rispetto del diritto all'autodeterminazione",
+    "La categoria BES racchiude:|alunni con disabilità certificate dalla 104/92, DSA, alunni con altri bisogni educativi",
+    "Gli alunni con disabilità certificata:|necessitano di un PEI",
+    "Gli alunni con DSA:|sono alunni con dislessia, discalculia, disortografia e disgrafia",
+    "L'insegnante, quando progetta:|deve tener conto dei bisogni di tutti gli studenti",
+    "Il livello individuale del gruppo classe:|si focalizza sulle aspettative, motivazioni e valori di ciascun individuo",
+    "Il livello sistemico del gruppo classe:|considera i ruoli, le regole, le norme, le funzioni, gli orari e i programmi istituzionali stabiliti dal sistema scolastico",
+    "Il gruppo classe:|è un'entità dinamica in continua evoluzione",
+    "Le strategie a livello globale di scuola:|riguardano la creazione di associazioni tra studenti",
+    "L'azione organizzata dei membri del gruppo:|crea un'interdipendenza funzionale",
+    "Nell'interazione cooperativa:|lavorano insieme e condividono un obiettivo comune",
+    "Nel lavoro cooperativo:|gli studenti costruiscono insieme conoscenza",
+    "La didattica laboratoriale (si basa):|si basa sul fare degli allievi",
+    "Nella didattica laboratoriale, l'insegnante:|è progettista dell'apprendimento",
+    "Nella didattica laboratoriale la competenza:|è il risultato di una pratica, di una riflessione e di una interiorizzazione del processo di apprendimento sperimentato",
+    "L'azione di adattamento in ottica inclusiva è rivolta:|a tutta la classe",
+    "Uno degli aspetti fondamentali della comunicazione in classe:|è l'importanza di adattare il modo di comunicare alle reazioni della classe",
+    "Lo stile comunicativo definito 'attento' ha come finalità quelle di:|fornire feedback, dimostrare empatia e fornire segnali di ascolto",
+    "La lezione trasmissiva:|è fortemente centrata sul docente che espone concetti e teorie",
+    "Per 'prova formativa immediata' si intende:|una verifica chiusa focalizzata sull'unità didattica appena svolta, con feedback immediato e collettivo",
+    "Un limite insito nella classe tradizionale è:|la dimensione della popolazione, i tempi, lo spazio e le modalità del raggruppamento",
+    "Il setting d'aula nel progetto nazionale 'Scuola senza Zaino' prevede:|l'area tavoli per il lavoro individuale, a coppie o a gruppi, e la zona del forum per i momenti nel grande gruppo",
+    "Il setting d'aula nel progetto 'Scuola senza zaino' promuove:|la centralità dell'alunno e della classe come comunità di apprendimento",
+    "L'obiettivo dell'evidenziazione dei testi didattici è quello di:|facilitare l'individuazione delle informazioni rilevanti nel testo",
+    "Adattare i materiali didattici significa:|personalizzare i materiali didattici in base alle esigenze di ciascuno studente",
+    "Gli schemi si differenziano dalle mappe, perché:|gli schemi non richiedono regole di composizione formalizzate, a differenza delle mappe cognitive",
+    "Le mappe cognitive:|devono seguire regole di composizione condivise",
+    "Le mappe mentali sono:|mappe cognitive",
+    "La caratteristica distintiva delle mappe mentali rispetto alle mappe concettuali è:|la presenza di un'idea centrale e di collegamenti periferici",
+    "Nella costruzione di una mappa mentale occorre:|identificare l'argomento principale e le idee organizzative di base",
+    "Le mappe concettuali si basano su:|una rappresentazione gerarchica",
+    "Tra gli elementi che costituiscono una mappa concettuale vi sono:|concetti, parole-legame, domanda focale iniziale, ordine gerarchico, relazioni trasversali, forma e formattazione",
+    "Nella mappa concettuale, la domanda focale serve per:|limitare l'espansione infinita della mappa",
+    "Nella produzione di mappe concettuali, è importante che l'insegnante e gli studenti lavorino insieme perché:|si genera un ampio confronto sulle soluzioni possibili e le integrazioni apportate dai singoli",
+    "Favorire l'uso di schemi, diagrammi di flusso, sequenze e gerarchie nella didattica è importante:|per aiutare a rappresentare visivamente i nessi logici e le conoscenze in ogni disciplina",
+    "Per metacognizione si intende:|consapevolezza dei processi cognitivi e controllo di essi",
+    "Uno degli aspetti fondamentali della metacognizione è:|la conoscenza metacognitiva e i processi di controllo",
+    "La relazione tra metacognizione e prestazione è:|causale di direzione biunivoca",
+    "Il secondo livello della didattica metacognitiva è:|Autoconsapevolezza del proprio funzionamento cognitivo",
+    "Uno degli aspetti importanti dell'insegnamento strategico è:|automatizzare le strategie attraverso esercitazioni estensive",
+    "La differenza principale tra apprendimento incidentale e apprendimento intenzionale è:|l'apprendimento incidentale avviene senza un intento specifico, mentre l'apprendimento intenzionale richiede uno sforzo deliberato",
+    "Chi ha uno stile cognitivo convergente:|procede per ipotesi",
+    "Gli studenti con DSA potrebbero avere difficoltà nella gestione del diario scolastico perché:|incontrano difficoltà a decifrare le varie informazioni testuali di contesto",
+    "Tra le strategie consigliate per affrontare le interrogazioni e superare la paura ad esse collegata, vi è:|considerare le verifiche come un'occasione di autoeducazione",
+    "Gli studenti devono imparare a gestire correttamente il proprio tempo pomeridiano per:|stimare correttamente il tempo necessario per svolgere i compiti",
+    "L'OMS nel 2001 ha elaborato e adottato come strumento per definire il concetto di disabilità:|ICF (Classificazione Internazionale del Funzionamento, Disabilità e Salute)",
+    "Il modello biopsicosociale dell'ICF integra gli aspetti:|biologico, psicologico e sociale",
+    "L'approccio multidimensionale dell'ICF non considera:|fattori economici",
+    "Secondo l'ICF, la disabilità è:|un'esperienza complessa che coinvolge diversi fattori",
+    "Secondo la Convenzione ONU sui diritti delle persone con disabilità, la Progettazione Universale è definita come:|la progettazione di prodotti, ambienti, programmi e servizi utilizzabili da tutte le persone senza bisogno di adattamenti",
+    "Il termine Universal Design venne coniato da:|R. L. Mace nel 1985",
+    "Il principio dell'Universal Design che si focalizza sulla necessità di garantire spazi e dimensioni adeguati per tutti gli utenti, considerando anche l'uso di tecnologie assistive è:|dimensioni e spazio adeguati all'approccio e all'uso",
+    "Un esempio che illustra il principio dello sforzo fisico contenuto risulta:|interruttori e pulsanti che richiedono una pressione leggera",
+    "L'idea principale alla base dell'Universal Design for Learning (UDL) è:|progettare l'insegnamento tenendo conto a priori delle diverse esigenze degli studenti",
+    "Progettare un curricolo inclusivo secondo l'Universal Design for Learning (UDL) significa:|introdurre approcci flessibili che possono essere personalizzati e adattati alle esigenze individuali degli studenti",
+    "Al centro della teoria socio-culturale di Vygotskij vi è:|l'interazione sociale e la mediazione culturale",
+    "Secondo Vygotskij la 'zona di sviluppo prossimale' è:|la distanza tra le capacità attuali e il potenziale massimo di un individuo",
+    "Secondo Vygotskij, il ruolo dell'educatore nel processo di apprendimento è quello di:|presentare sfide leggermente al di sopra delle competenze attuali dello studente",
+    "Nello stadio sensomotorio della teoria di Piaget si sviluppa:|la permanenza dell'oggetto",
+    "Tra le categorie della Tassonomia di Bloom non rientra:|collaborare",
+    "Nel 2001 la Tassonomia di Bloom è stata aggiornata da:|Anderson e Krathwohl",
+    "Nel modello di intelligenze multiple di Gardner non è inclusa:|l'intelligenza sociale/emotiva",
+    "Gardner suggerisce che l'intelligenza non dovrebbe essere vista come:|una singola entità misurata dal quoziente intellettivo (QI)",
+    "Non è una delle tre forme di intelligenza proposte da Sternberg:|emotiva",
+    "L'immaginazione e la scoperta si basano su:|l'intelligenza creativa",
+    "Nella teoria della mente, il principio che afferma che il cervello cambia continuamente con le esperienze è:|principio 4: cambiamenti costanti nel cervello",
+    "Secondo gli studi neuroscientifici, il cervello è:|in evoluzione",
+    "La rete di riconoscimento riguarda:|il 'cosa' dell'apprendimento",
+    "Le reti strategiche riguardano:|la pianificazione ed esecuzione dei compiti",
+    "La rete di riconoscimento coinvolge:|la percezione e l'attenzione",
+    "Lo studente utilizza la rete strategica per:|elaborare, classificare, ordinare le informazioni",
+    "L'autoefficacia fa riferimento a:|i pensieri delle persone sulle proprie capacità",
+    "Le fasi della didattica metacognitiva sono:|6",
+    "Lo scopo della didattica metacognitiva è quello di:|riflettere sui processi per raggiungere un livello migliore di autonomia cognitiva",
+    "I sistemi affettivi sono responsabili:|dell'impegno e della motivazione",
+    "Uno dei principi fondamentali dell'Universal Design for Learning (UDL) per creare un curriculum flessibile:|fornire molteplici mezzi di rappresentazione",
+    "L'utilizzo di diversi mezzi di rappresentazione per gli studenti:|riduce gli ostacoli fisici, sensoriali e percettivi all'apprendimento",
+    "Nolet e McLaughlin (2005) suggeriscono di:|utilizzare la ridondanza (sistemi paralleli), cioè presentare le stesse informazioni in formati diversi",
+    "Uno dei rischi associati alla mancanza di adattamento delle modalità di azione ed espressione risulta:|perdita di interesse e isolamento da parte degli studenti",
+    "Il secondo principio UDL riguarda:|il come dell'apprendimento",
+    "Il terzo principio dell'UDL è:|fornire molteplici modalità di coinvolgimento",
+    "E' importante offrire diverse opzioni di coinvolgimento nell'ambiente di apprendimento per:|soddisfare le influenze culturali e le diverse necessità degli studenti",
+    "Il primo principio UDL riguarda:|il cosa dell'apprendimento",
+    "Secondo Vygotskij (1986), il ruolo dell'interazione interpersonale nell'apprendimento degli studenti:|è stimolante e motivante per l'apprendimento",
+    "L'approccio flessibile dell'UDL nella progettazione dei curricula:|adatta metodi e materiali didattici alle esigenze individuali degli studenti",
+    "Uno degli obiettivi principali per valorizzare i diversi modi di apprendere è:|proporre metodi di studio e apprendimento diversificati",
+    "Le tecnologie digitali:|incrementano altre modalità di elaborazione e produzione della conoscenza",
+    "La 'capacità di trasformazione' dei mezzi digitali implica:|la possibilità di trasformare il testo scritto in suono",
+    "Una delle quattro caratteristiche fondamentali dei mezzi digitali inclusivi è:|versatilità",
+    "Le tecnologie possono contribuire alla personalizzazione dell'apprendimento:|adattando i contenuti e le attività alle esigenze e preferenze individuali",
+    "Per tecnologia assistiva si intende:|tecnologie progettate per aumentare, mantenere o migliorare le capacità funzionali delle persone con disabilità",
+    "Le 'tecnologie inclusive' rispetto alle tecnologie assistive tradizionali:|possono essere utili per tutti gli studenti, non solo per quelli con disabilità",
+    "L'obiettivo principale di Classroom Screen è:|migliorare l'efficienza delle lezioni tramite strumenti digitali",
+    "Tra le funzionalità di Classroom Screen come supporto all'autoregolazione e alla didattica metacognitiva vi sono:|check-list e timer visuale",
+    "Lo scopo di inserire strumenti come il semaforo, i dadi e il tabellone segnapunti nelle attività didattiche è quello di:|mantenere alta l'attenzione e incrementare la motivazione degli studenti",
+    "L'approccio alle neuroscienze suggerisce una differenziazione che va oltre le etichette diagnostiche, enfatizzando il lavoro sulle:|funzioni cognitivo-emotive potenziabili",
+    "Gli insegnanti devono dare importanza:|a un'assunzione consapevole di teorie di riferimento che favoriscano la co-evoluzione e la co-partecipazione",
+    "Il nuovo scenario delle neuroscienze promuove un dialogo bidirezionale tra:|scuola e neuroscienze",
+    "La 'buona didattica' è sintetizzata come una didattica fondata su:|evidenze, etica, inclusiva, dinamica e innovativa, orientata al cambiamento e aperta a diverse prospettive",
+    "Ramachandran ha studiato un disturbo in cui gli individui sembrano ignorare una metà del proprio campo visivo nella:|sindrome del neglect spaziale",
+    "Ha descritto l'apprendimento come un processo che modifica il comportamento in modo duraturo:|Bateson",
+    "Bateson ha descritto l'apprendimento come:|un processo che modifica il comportamento in modo duraturo attraverso l'esperienza, soprattutto emotiva profonda",
+    "La percezione è descritta come:|il processo che consente di attribuire significato agli input sensoriali provenienti dall'ambiente esterno",
+    "La Gestalt descrive il significato delle percezioni come quelle derivanti da leggi:|innate",
+    "La prospettiva funzionalistica New Look è stata ideata da:|Bruner",
+    "La stimolazione esterna può anche attivare la:|realtà interna inconscia",
+    "Secondo Hans Selye, le reazioni allo stress avvengono in diverse:|fasi",
+    "L'amigdala svolge:|un ruolo chiave nel processo di valutazione emotiva degli eventi",
+    "Le risposte fisiologiche allo stress emergono prima della coscienza della paura, suggerendo una distanza tra la reazione somatica e la:|coscienza",
+    "L'arrampicata e il movimento nella dimensione verticale alludono:|alla crescita",
+    "Il gioco sensomotorio non solo favorisce lo sviluppo motorio, ma è cruciale anche per l'integrazione:|sociale",
+    "Le sperimentazioni sensomotorie e corporee:|assumono un significato specifico in rapporto alla maturazione del Sé corporeo",
+    "Il passaggio nel tunnel rinforza la percezione:|del sé",
+    "La palla, per la sua forma, richiama l'idea di:|unità coesa",
+    "L'utilizzo di stoffe, teli e dell'amaca negli avvolgimenti e nei dondolii:|conferisce un senso di benessere corporeo diffuso e globale",
+    "Che cos'è la memoria:|è la capacità dell'individuo di conservare informazioni passate e di servirsene per affrontare situazioni presenti e future",
+    "L'elaborazione può essere:|intenzionale o incidentale",
+    "Curva dell'oblio:|esprime il rapporto tra le informazioni dimenticate e il tempo",
+    "Nel modello a cono, all'aumentare del livello di controllo:|aumenta la richiesta di risorse cognitive",
+    "Un'emozione è:|un fenomeno complesso risultante dalla valutazione di eventi esterni o interni, noti come eventi emotigeni",
+    "Le caratteristiche delle emozioni:|risposte con intensità e durata specifiche, distinguendole dagli stati dell'umore",
+    "Le dimensioni del processo emotivo:|processo multicomponenziale con valutazione cognitiva, attivazione fisiologica, espressività e comportamento",
+    "Il funzionamento del cervello e il comportamento intelligente sono:|costituiti da molteplici aspetti dimensionali che si influenzano reciprocamente",
+    "L'intelligenza emotiva emerge come elemento centrale nello sviluppo del pensiero e dei processi cognitivi:|inclusi quelli legati all'apprendimento scolastico",
+    "I processi mentali di relazione e integrazione:|riconosciuti come dimensioni chiave dell'intelligenza",
+    "Le soft skills sono:|competenze che aiutano gli individui ad adattarsi e affrontare efficacemente la vita professionale e quotidiana",
+    "Le soft skills includono:|abilità sociali, comunicative e linguistiche, assertività, atteggiamenti personali e relazionali",
+    "La scuola può potenziare le abilità personali e relazionali attraverso:|un clima di classe orientato alla comunicazione democratica e metodologie didattiche inclusive",
+    "Lo sviluppo delle soft skills è cruciale per il successo:|personale e professionale",
+    "Il pensiero critico è un processo mentale:|attivo che mira a comprendere, valutare e risolvere problemi in modo razionale",
+    "La flessibilità implica:|considerare nuove opzioni e ripensare i problemi",
+    "I pensatori critici devono essere predisposti a:|raggiungere il consenso tra i membri del gruppo",
+    "Torrance ha definito 4 criteri del profilo creativo:|fluidità, flessibilità, originalità, elaborazione",
+    "Il metodo creativo P.A.P.S.A è stato creato da:|H. Jaoui",
+    "La creatività nasce:|da un atteggiamento di ricettività verso idee nuove",
+    "La comunicazione in didattica si riferisce:|allo scambio di informazioni tra insegnanti e studenti durante il processo di apprendimento",
+    "Gli insegnanti sono responsabili di trasmettere informazioni:|in modo chiaro e comprensibile",
+    "La comunicazione in didattica include anche:|il feedback e la valutazione",
+    "Dewey ha sottolineato l'importanza:|dell'esperienza e dell'interazione attiva degli studenti con il materiale di apprendimento",
+    "La 'zona di sviluppo prossimale' ha evidenziato l'importanza dell'interazione sociale:|nell'apprendimento",
+    "Bruner ha contribuito allo sviluppo della teoria:|dell'apprendimento per scoperta",
+    "Illich ha criticato il sistema educativo istituzionale e ha promosso l'apprendimento:|auto-diretto",
+    "Essere consapevoli delle proprie abilità nelle relazioni permette di raggiungere una:|migliore salute sociale",
+    "Le persone con uno stile assertivo comunicano:|apertamente le proprie opinioni",
+    "Per aiutare gli studenti a migliorare le proprie capacità e competenze occorre:|fornire feedback costruttivo e mirato",
+    "Insegnare attraverso i concetti implica:|attivare un processo mentale che aiuta a comprendere la realtà",
+    "Il primo passo per costruire un concetto è:|definirne il contenuto",
+    "La mappa concettuale è:|un'illustrazione spaziale di un concetto",
+    "La rete concettuale rappresenta l'organizzazione delle relazioni:|per consentire agli studenti di comprendere gli elementi del concetto e le loro connessioni",
+    "Il concetto di metacognizione riguarda la consapevolezza dei:|propri processi cognitivi",
+    "La metacognizione si divide in:|conoscenza metacognitiva e processi metacognitivi di controllo",
+    "La didattica metacognitiva è un approccio all'insegnamento e:|all'apprendimento",
+    "La didattica dell'errore è un approccio educativo:|che valorizza l'errore come opportunità di apprendimento",
+    "Lo sviluppo della capacità di autocorrezione:|rappresenta una risorsa nel percorso didattico",
+    "Le strategie correttive necessarie:|sono utili per migliorare le loro prestazioni",
+    "La didattica speciale si occupa:|degli studenti nelle disabilità, con barriere dell'apprendimento e complesse dinamiche familiari",
+    "Si tiene sempre conto:|del background dello studente",
+    "La didattica speciale mira a fornire un'istruzione su misura per questi studenti:|permettendo loro di sviluppare appieno il loro potenziale e partecipare attivamente alla vita della comunità",
+    "La didattica multimediale si riferisce a un approccio:|educativo",
+    "Quando si discute di multimedialità, è importante considerarla come uno spazio in cui convergono:|diverse forme di linguaggio, temi e media",
+    "La DAD è intesa come:|didattica a distanza",
+    "Indire ha delineato quattro direzioni di ricerca focalizzate sulla:|didattica laboratoriale",
+    "La didattica laboratoriale:|permette di fornire agli insegnanti modelli alternativi rispetto alla lezione frontale",
+    "Il coding è considerato:|come una didattica di tipo laboratoriale",
+    "La valutazione in ambito scolastico e didattico:|è un processo fondamentale che coinvolge la misurazione e la valutazione delle competenze, delle conoscenze e delle abilità degli studenti",
+    "Esistono diverse tipologie di valutazione:|la valutazione formativa e la valutazione sommativa",
+    "La valutazione efficace include anche:|il feedback costruttivo",
+    "È importante che la valutazione sia:|inclusiva e equa",
+    "L'Effetto Pigmalione:|è stato introdotto da Rosenthal",
+    "L'autoefficacia è:|la convinzione nelle proprie capacità di organizzare e realizzare il corso di azioni",
+    "Fenomeni quali stress e burnout influiscono:|sulle loro eventuali ripercussioni negative sulla riuscita del percorso formativo degli studenti",
+    "La riflessione teorica:|usa la letteratura presente sull'argomento",
+    "La Ricerca Empirica:|osserva le metodologie esistenti in atto",
+    "Ricerca-azione:|rimodula le strategie sulla base dei risultati",
+    "L'apprendimento cooperativo è sostenuto da vari quadri teorici:|sociale, dell'interdipendenza, dell'elaborazione cognitiva e culturale sociale",
+    "La teoria dell'interdipendenza:|presuppone un'interdipendenza positiva tra gli studenti",
+    "La teoria culturale:|evidenzia l'importanza dell'interazione sociale nell'apprendimento",
+    "Il raggruppamento eterogeneo favorisce il tutoraggio:|tra pari",
+    "La Peer Education:|è una metodologia didattica che si basa sulla trasmissione di conoscenze ed esperienze tra membri di un gruppo di pari, seguendo un piano ben strutturato",
+    "Keith J. Topping definisce:|L'apprendimento tra pari, che permette agli studenti che ricevono spiegazioni da altri studenti di imparare meglio rispetto a quelli che lavorano da soli",
+    "La Peer Education comporta una riorganizzazione:|dei ruoli scolastici",
+    "Il brainstorming, conosciuto anche come:|tempesta di cervelli",
+    "Durante una sessione di brainstorming, il gruppo discute liberamente su un:|problema reciproco",
+    "Il brainstorming è una tecnica flessibile che può essere utilizzata:|in una varietà di contesti",
+    "Il problem solving è un processo attraverso il quale:|individui o gruppi identificano, analizzano e risolvono i problemi in modo efficace",
+    "Le linee guida europee sul problem solving possono essere rappresentate da:|approcci e metodologie promosse e adottate a livello comunitario per affrontare sfide e problemi comuni",
+    "Le strategie di soluzione dei problemi possano essere:|Comprensione, Analisi, Progettazione, Controllo e Verifica",
+    "Nella verifica, lo studente, giunto a una soluzione del problema:|dovrebbe chiedersi se questa sia esatta",
+    "Il Role Playing formativo, o gioco di ruolo è:|educativo",
+    "Il termine 'Role Playing' nella sua accezione moderna è stato coniato dallo psichiatra:|Moreno",
+    "La fase preparatoria del Role playing formativo prevede la definizione:|del tema da trattare",
+    "Il tempo del cerchio, o circle time, è un momento particolare:|della vita scolastica",
+    "Questa metodologia aiuta a facilitare:|la comunicazione e la conoscenza reciproca",
+    "È importante che le procedure (nel circle time):|siano proposte dal docente e una volta accettate dalla classe, mantenute per tutto il corso dell'esperienza"
 ];
 
-// Funzione di shuffle per l'intero database
-function getDailyQuestions() {
-    let pool = [...masterPool].sort(() => 0.5 - Math.random()).slice(0, 30);
-    return pool.map(item => {
-        // Shuffle delle opzioni internamente per non avere la risposta giusta sempre nella stessa posizione
-        let originalCorrect = item.a[item.c];
-        let shuffledA = [...item.a].sort(() => 0.5 - Math.random());
+// Creazione del database in formato Object
+const db = rawData.map(line => {
+    let parts = line.split('|');
+    return { q: parts[0].trim(), c: parts[1].trim() };
+});
+
+// Array di tutte le risposte corrette esistenti per generare i distrattori
+const allCorrectAnswers = db.map(item => item.c);
+
+// Generatore del test quotidiano
+function getDailyQuiz() {
+    // 1. Estrae 30 domande a caso dall'intero paniere
+    let selectedQuestions = [...db].sort(() => 0.5 - Math.random()).slice(0, 30);
+    
+    // 2. Genera i distrattori per ogni domanda in base alla lunghezza del testo
+    return selectedQuestions.map(item => {
+        let correctAns = item.c;
+        
+        // Filtra le risposte che hanno una lunghezza simile (+/- 35 caratteri) per evitare il trucco visivo
+        let similarLengthAnswers = allCorrectAnswers.filter(a => 
+            a !== correctAns && Math.abs(a.length - correctAns.length) < 35
+        );
+        
+        // Se non trova abbastanza risposte simili, usa tutte le risposte disponibili (fallback)
+        if (similarLengthAnswers.length < 3) {
+            similarLengthAnswers = allCorrectAnswers.filter(a => a !== correctAns);
+        }
+        
+        // Sceglie 3 distrattori casuali
+        let distractors = similarLengthAnswers.sort(() => 0.5 - Math.random()).slice(0, 3);
+        
+        // Unisce la risposta giusta ai 3 distrattori e rimescola le opzioni (A, B, C, D)
+        let options = [correctAns, ...distractors].sort(() => 0.5 - Math.random());
+        
         return {
             q: item.q,
-            a: shuffledA,
-            c: shuffledA.indexOf(originalCorrect)
+            a: options,
+            correctIdx: options.indexOf(correctAns),
+            correctText: correctAns
         };
     });
 }
 
-let activeQuiz = getDailyQuestions();
+let activeQuiz = getDailyQuiz();
 let currentIdx = 0;
 let correctHits = 0;
 let wrongHits = 0;
@@ -267,7 +414,7 @@ function render() {
 }
 
 document.getElementById('next-btn').onclick = () => {
-    if(answersLog[currentIdx] === activeQuiz[currentIdx].c) correctHits++; else wrongHits++;
+    if(answersLog[currentIdx] === activeQuiz[currentIdx].correctIdx) correctHits++; else wrongHits++;
     document.getElementById('r-val').innerText = correctHits;
     document.getElementById('w-val').innerText = wrongHits;
     currentIdx++;
@@ -280,7 +427,7 @@ function finish() {
     document.getElementById('res-ui').classList.remove('hidden');
     document.getElementById('bar-fill').style.width = "100%";
     document.getElementById('f-score').innerText = correctHits + " / 30";
-    document.getElementById('f-msg').innerText = correctHits > 24 ? "Preparazione eccellente. Sei pronto per l'esame." : "Alcuni concetti richiedono un ulteriore approfondimento critico.";
+    document.getElementById('f-msg').innerText = correctHits >= 25 ? "Superato brillantemente! La logica anti-trucco non ti ha fregato." : "Attenzione: non basta più cercare la risposta lunga, bisogna studiare i concetti!";
 }
 
 document.getElementById('rev-btn').onclick = () => {
@@ -288,12 +435,19 @@ document.getElementById('rev-btn').onclick = () => {
     ui.classList.toggle('hidden');
     ui.innerHTML = '<h3>Dettaglio Risposte</h3>';
     activeQuiz.forEach((q, i) => {
-        const ok = q.c === answersLog[i];
+        const ok = q.correctIdx === answersLog[i];
         const d = document.createElement('div');
         d.className = 'rev-item';
-        d.innerHTML = `<strong>${i+1}. ${q.q}</strong><br>
-        <div style="color:${ok ? 'var(--correct)':'var(--wrong)'}; margin-top:5px;">Scelta: ${q.a[answersLog[i]]}</div>
-        ${!ok ? '<div style="color:var(--correct)">Corretta: ' + q.a[q.c] + '</div>' : ''}`;
+        
+        let ansHtml = `<strong>${i+1}. ${q.q}</strong>`;
+        ansHtml += `<div class="rev-ans" style="border-left: 4px solid ${ok ? 'var(--correct)':'var(--wrong)'}">`;
+        ansHtml += `<div style="color:${ok ? 'var(--correct)':'var(--wrong)'}; margin-bottom:5px;">Scelta: ${q.a[answersLog[i]]}</div>`;
+        if(!ok) {
+            ansHtml += `<div style="color:var(--correct)">Corretta: ${q.correctText}</div>`;
+        }
+        ansHtml += `</div>`;
+        
+        d.innerHTML = ansHtml;
         ui.appendChild(d);
     });
 };
@@ -302,4 +456,3 @@ render();
 </script>
 </body>
 </html>
-
